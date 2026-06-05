@@ -16,22 +16,14 @@ func NewAuthRepository(db *pgxpool.Pool) *AuthRepository {
 	}
 }
 
-func (r *AuthRepository) Create(ctx context.Context, email string, password string) (int, error) {
+func (r *AuthRepository) Create(ctx context.Context, email string, password string, token string) (int64, error) {
 	sql := `
-	INSERT INTO users (
-		email,
-		password
-	)
-	VALUES ($1, $2)
-	RETURNING id
+	INSERT INTO users (email, password, activation_token, verified_at)
+		VALUES ($1, $2, $3, NULL)
+		RETURNING id
 	`
-	var userID int
-	err := r.db.QueryRow(
-		ctx,
-		sql,
-		email,
-		password,
-	).Scan(&userID)
+	var userID int64
+	err := r.db.QueryRow(ctx, sql, email, password, token).Scan(&userID)
 
 	if err != nil {
 		return 0, err

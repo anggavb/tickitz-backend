@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/tickitz-backend/internal/dto"
 	"github.com/tickitz-backend/internal/errs"
 	"github.com/tickitz-backend/internal/repository"
@@ -38,8 +39,20 @@ func (s *AuthService) Register(ctx context.Context, req dto.RegisterRequest) err
 
 	hashedPassword := hc.Hash(req.Password)
 
-	if _, err := s.authRepo.Create(ctx, req.Email, hashedPassword); err != nil {
+	token := uuid.NewString()
+
+	if _, err := s.authRepo.Create(ctx, req.Email, hashedPassword, token); err != nil {
 		log.Printf("[Register] Create user error: %v\n", err)
+		return errs.ErrInternalServer
+	}
+
+	activationLink := "https://your-domain.com/activate?token=" + token
+
+	subject := "[TICKITZ] Activation Link"
+	body := "Klik link berikut untuk mengaktivasi akun anda : \n\n" + activationLink
+
+	if err := pkg.SendMail([]string{req.Email}, subject, body); err != nil {
+		log.Printf("[Register] Send email error: %v\n", err)
 		return errs.ErrInternalServer
 	}
 
