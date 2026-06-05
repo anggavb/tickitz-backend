@@ -6,9 +6,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	_ "github.com/joho/godotenv"
 	"github.com/tickitz-backend/internal/config"
 	"github.com/tickitz-backend/internal/router"
 )
