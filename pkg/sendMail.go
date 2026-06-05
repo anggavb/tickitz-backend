@@ -7,9 +7,9 @@ import (
 )
 
 func SendMail(receivers []string, subject, body string) error {
-	host := "smtp.sumopod.com"
-	port := "465"
-	from := "support@viketin.id"
+	host := os.Getenv("SMTP_HOST")
+	port := os.Getenv("SMTP_PORT")
+	from := os.Getenv("SMTP_SENDER")
 	username := os.Getenv("SMTP_USER")
 	password := os.Getenv("SMTP_PASS")
 
