@@ -46,6 +46,16 @@ func (c *AuthController) Register(ctx *gin.Context) {
 			}
 		}
 
+		if strings.Contains(err.Error(), "IsAgree") {
+			if strings.Contains(err.Error(), "eq") || strings.Contains(err.Error(), "required") {
+				ctx.JSON(http.StatusBadRequest, gin.H{
+					"success": false,
+					"message": "You must agree to the terms and conditions",
+				})
+				return
+			}
+		}
+
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": "Invalid request",
