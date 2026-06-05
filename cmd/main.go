@@ -1,8 +1,16 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/gin-gonic/gin"
 	_ "github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	_ "github.com/joho/godotenv"
+	"github.com/tickitz-backend/internal/config"
+	"github.com/tickitz-backend/internal/router"
 )
 
 func main() {
@@ -18,7 +26,7 @@ func main() {
 	}
 	defer db.Close()
 	log.Println("DB Connected")
-	router.InitRouter(app, db, rc)
+	router.InitRouter(app, db)
 	app.Run(fmt.Sprintf("%s:%s", os.Getenv("APP_HOST"), os.Getenv("APP_PORT")))
 
 }

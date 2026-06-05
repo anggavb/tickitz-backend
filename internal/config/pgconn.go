@@ -1,5 +1,13 @@
 package config
 
+import (
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
 func ConnectPsql() (*pgxpool.Pool, error) {
 	values := make([]any, 0, 5)
 	values = append(values, os.Getenv("DB_USER"))
