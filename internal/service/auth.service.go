@@ -3,8 +3,13 @@ package service
 import (
 	"context"
 	"log"
+<<<<<<< HEAD
 	"time"
 
+=======
+
+	"github.com/google/uuid"
+>>>>>>> b9ee6f3b7daa7e17199dec072791cf7dbe5d369b
 	"github.com/tickitz-backend/internal/dto"
 	"github.com/tickitz-backend/internal/errs"
 	"github.com/tickitz-backend/internal/repository"
@@ -23,6 +28,7 @@ func NewAuthService(authRepo *repository.AuthRepository) *AuthService {
 
 func (s *AuthService) Register(ctx context.Context, req dto.RegisterRequest) error {
 
+<<<<<<< HEAD
 	isAccountNotActive, err := s.authRepo.FindByEmailAndActivate(ctx, req.Email)
 	if err != nil {
 		log.Printf("[Register] FindByEmailAndActivate error: %v\n", err)
@@ -34,6 +40,8 @@ func (s *AuthService) Register(ctx context.Context, req dto.RegisterRequest) err
 		return errs.ErrAccountNotActive
 	}
 
+=======
+>>>>>>> b9ee6f3b7daa7e17199dec072791cf7dbe5d369b
 	isEmailExists, err := s.authRepo.FindByEmail(ctx, req.Email)
 	if err != nil {
 		log.Printf("[Register] FindByEmail error: %v\n", err)
@@ -50,16 +58,29 @@ func (s *AuthService) Register(ctx context.Context, req dto.RegisterRequest) err
 
 	hashedPassword := hc.Hash(req.Password)
 
+<<<<<<< HEAD
 	OTP := pkg.GenerateOTP()
 	hashedOTP := hc.Hash(OTP)
 
 	if _, err := s.authRepo.Create(ctx, req.Email, hashedPassword, hashedOTP); err != nil {
+=======
+	token := uuid.NewString()
+
+	if _, err := s.authRepo.Create(ctx, req.Email, hashedPassword, token); err != nil {
+>>>>>>> b9ee6f3b7daa7e17199dec072791cf7dbe5d369b
 		log.Printf("[Register] Create user error: %v\n", err)
 		return errs.ErrInternalServer
 	}
 
+<<<<<<< HEAD
 	subject := "[TICKITZ] Activation Account"
 	body := "Ini adalah kode OTP anda : \n\n" + OTP
+=======
+	activationLink := "https://your-domain.com/activate?token=" + token
+
+	subject := "[TICKITZ] Activation Link"
+	body := "Klik link berikut untuk mengaktivasi akun anda : \n\n" + activationLink
+>>>>>>> b9ee6f3b7daa7e17199dec072791cf7dbe5d369b
 
 	if err := pkg.SendMail([]string{req.Email}, subject, body); err != nil {
 		log.Printf("[Register] Send email error: %v\n", err)
@@ -68,6 +89,7 @@ func (s *AuthService) Register(ctx context.Context, req dto.RegisterRequest) err
 
 	return nil
 }
+<<<<<<< HEAD
 
 func (s *AuthService) Activate(ctx context.Context, req dto.ActivationRequest) error {
 
@@ -153,3 +175,5 @@ func (s *AuthService) GetNewOTP(ctx context.Context, req dto.NewOTPRequest) erro
 
 	return nil
 }
+=======
+>>>>>>> b9ee6f3b7daa7e17199dec072791cf7dbe5d369b

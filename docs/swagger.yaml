@@ -1,0 +1,17 @@
+basePath: /
+host: localhost:8080
+info:
+  contact: {}
+  description: API documentation for Tickitz backend application
+  license:
+    name: MIT
+  title: Backend Tickitz API
+  version: "1.0"
+paths: {}
+securityDefinitions:
+  ApiKeyAuth:
+    description: 'Bearer token used for authorization. Example: Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -73,6 +73,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 			return
 		}
 
+<<<<<<< HEAD
 		if errors.Is(err, errs.ErrAccountNotActive) {
 
 			otpReq := dto.NewOTPRequest{
@@ -97,6 +98,8 @@ func (c *AuthController) Register(ctx *gin.Context) {
 			return
 		}
 
+=======
+>>>>>>> b9ee6f3b7daa7e17199dec072791cf7dbe5d369b
 		if errors.Is(err, errs.ErrInternalServer) {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
@@ -120,6 +123,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		},
 	})
 }
+<<<<<<< HEAD
 
 func (c *AuthController) Activate(ctx *gin.Context) {
 	var user dto.ActivationRequest
@@ -259,3 +263,5 @@ func (c *AuthController) GetNewOTP(ctx *gin.Context) {
 		},
 	})
 }
+=======
+>>>>>>> b9ee6f3b7daa7e17199dec072791cf7dbe5d369b

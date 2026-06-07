@@ -1,3 +1,5 @@
+include .env
+
 MIGRATION_PATH=db/migrations
 SEEDER_PATH=db/seeds
 

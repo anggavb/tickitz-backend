@@ -3,5 +3,5 @@ public/docs/*
 public/img/*
 !public/**/README.md
 
-.env
+.env*
 .air.toml

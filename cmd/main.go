@@ -6,13 +6,30 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+<<<<<<< HEAD
 	_ "github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	_ "github.com/joho/godotenv"
+=======
+	"github.com/joho/godotenv"
+>>>>>>> b9ee6f3b7daa7e17199dec072791cf7dbe5d369b
 	"github.com/tickitz-backend/internal/config"
 	"github.com/tickitz-backend/internal/router"
 )
 
+// @title						Backend Tickitz API
+// @version						1.0
+// @description					API documentation for Tickitz backend application
+
+// @license.name				MIT
+
+// @host						localhost:8080
+// @BasePath					/
+
+// @securityDefinitions.apikey	ApiKeyAuth
+// @in							header
+// @name						Authorization
+// @description					Bearer token used for authorization. Example: Bearer <token>
 func main() {
 	fmt.Println("masuk")
 	if err := godotenv.Load(); err != nil {
