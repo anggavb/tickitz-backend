@@ -6,13 +6,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-<<<<<<< HEAD
-	_ "github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	_ "github.com/joho/godotenv"
-=======
-	"github.com/joho/godotenv"
->>>>>>> b9ee6f3b7daa7e17199dec072791cf7dbe5d369b
 	"github.com/tickitz-backend/internal/config"
 	"github.com/tickitz-backend/internal/router"
 )

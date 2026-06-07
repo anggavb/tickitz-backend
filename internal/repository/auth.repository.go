@@ -2,10 +2,7 @@ package repository
 
 import (
 	"context"
-<<<<<<< HEAD
 	"time"
-=======
->>>>>>> b9ee6f3b7daa7e17199dec072791cf7dbe5d369b
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -22,17 +19,10 @@ func NewAuthRepository(db *pgxpool.Pool) *AuthRepository {
 
 func (r *AuthRepository) Create(ctx context.Context, email string, password string, token string) (int64, error) {
 	sql := `
-<<<<<<< HEAD
 		INSERT INTO users (email, password, activation_token, verified_at, token_expiry_at)
 			VALUES ($1, $2, $3, NULL, NOW() + INTERVAL '60 minutes')
 			RETURNING id
 		`
-=======
-	INSERT INTO users (email, password, activation_token, verified_at)
-		VALUES ($1, $2, $3, NULL)
-		RETURNING id
-	`
->>>>>>> b9ee6f3b7daa7e17199dec072791cf7dbe5d369b
 	var userID int64
 	err := r.db.QueryRow(ctx, sql, email, password, token).Scan(&userID)
 
@@ -64,7 +54,6 @@ func (r *AuthRepository) FindByEmail(ctx context.Context, email string) (bool, e
 
 	return exists, nil
 }
-<<<<<<< HEAD
 
 func (r *AuthRepository) FindByEmailAndActivate(ctx context.Context, email string) (bool, error) {
 	sql := `SELECT EXISTS (
@@ -124,5 +113,3 @@ func (r *AuthRepository) UpdateOTP(ctx context.Context, email string, token stri
 	_, err := r.db.Exec(ctx, sql, token, email)
 	return err
 }
-=======
->>>>>>> b9ee6f3b7daa7e17199dec072791cf7dbe5d369b
