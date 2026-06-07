@@ -15,4 +15,6 @@ func RegisterAuthRouter(router *gin.Engine, db *pgxpool.Pool) {
 	authController := controller.NewAuthController(authService)
 
 	authRouter.POST("/signup", authController.Register)
+	authRouter.POST("/activate", authController.Activate)
+	authRouter.POST("/otp", authController.GetNewOTP)
 }
