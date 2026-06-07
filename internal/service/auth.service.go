@@ -22,6 +22,17 @@ func NewAuthService(authRepo *repository.AuthRepository) *AuthService {
 
 func (s *AuthService) Register(ctx context.Context, req dto.RegisterRequest) error {
 
+	isAccountNotActive, err := s.authRepo.FindByEmailAndActivate(ctx, req.Email)
+	if err != nil {
+		log.Printf("[Register] FindByEmailAndActivate error: %v\n", err)
+		return errs.ErrInternalServer
+	}
+
+	if isAccountNotActive {
+		log.Printf("[Register] Email haven't activate yet: %s\n", req.Email)
+		return errs.ErrAccountNotActive
+	}
+
 	isEmailExists, err := s.authRepo.FindByEmail(ctx, req.Email)
 	if err != nil {
 		log.Printf("[Register] FindByEmail error: %v\n", err)

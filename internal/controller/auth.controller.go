@@ -72,6 +72,13 @@ func (c *AuthController) Register(ctx *gin.Context) {
 			})
 			return
 		}
+		if errors.Is(err, errs.ErrAccountNotActive) {
+			ctx.JSON(http.StatusConflict, gin.H{
+				"success": false,
+				"message": "Email hasn't activate yet",
+			})
+			return
+		}
 
 		if errors.Is(err, errs.ErrInternalServer) {
 			ctx.JSON(http.StatusInternalServerError, gin.H{

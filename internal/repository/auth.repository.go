@@ -18,7 +18,7 @@ func NewAuthRepository(db *pgxpool.Pool) *AuthRepository {
 
 func (r *AuthRepository) Create(ctx context.Context, email string, password string, token string) (int64, error) {
 	sql := `
-		INSERT INTO users (email, password, activation_token, verified_at, token_expiry)
+		INSERT INTO users (email, password, activation_token, verified_at, token_expiry_at)
 			VALUES ($1, $2, $3, NULL, NOW() + INTERVAL '60 minutes')
 			RETURNING id
 		`
@@ -51,5 +51,21 @@ func (r *AuthRepository) FindByEmail(ctx context.Context, email string) (bool, e
 		return false, err
 	}
 
+	return exists, nil
+}
+
+func (r *AuthRepository) FindByEmailAndActivate(ctx context.Context, email string) (bool, error) {
+	sql := `SELECT EXISTS (
+			SELECT 1
+			FROM users
+			WHERE email = $1
+			  AND verified_at IS NULL
+		)`
+
+	var exists bool
+
+	if err := r.db.QueryRow(ctx, sql, email).Scan(&exists); err != nil {
+		return false, err
+	}
 	return exists, nil
 }
