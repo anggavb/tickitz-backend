@@ -1,0 +1,1 @@
+ALTER TABLE "movies" ADD COLUMN "slug" varchar UNIQUE NOT NULL;
