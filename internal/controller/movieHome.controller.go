@@ -25,10 +25,10 @@ func NewMovieHomeController(movieHomeService *service.MovieHomeService) *MovieHo
 // @Tags         movies
 // @Accept       json
 // @Produce      json
-// @Param        slug      path      string  true  "Movie Slug"
-// @Success      200       {object}  map[string]interface{} "Success response with movie data"
-// @Failure      404       {object}  map[string]interface{} "Movie not found"
-// @Failure      500       {object}  map[string]interface{} "Internal server error"
+// @Param slug path string true "Movie Slug"
+// @Success 200 {object} dto.MovieSingleResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
 // @Router       /movies/{slug} [get]
 func (c *MovieHomeController) GetBySlug(ctx *gin.Context) {
 	slug := ctx.Param("slug")
@@ -53,5 +53,36 @@ func (c *MovieHomeController) GetBySlug(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    buildMovieResponse(movie),
+	})
+}
+
+// GetMovieSchedule handles retrieving movie showtimes by slug and location.
+//
+//	@Summary		Get movie showtimes schedule
+//	@Description	Retrieve nested showtimes for a specific movie grouped by locations and cinema branches.
+//	@Tags			Movies
+//	@Accept			json
+//	@Produce		json
+//	@Param			slug		path		string	true	"Movie Slug (e.g., echoes-of-jakarta)"
+//	@Param			location	query		string	false	"Filter by specific city/region location name"
+//	@Success		200			{object}	dto.LocationScheduleResponse "Successfully retrieved schedules"
+//	@Failure		500			{object}	map[string]string "Internal server error"
+//	@Router			/movies/{slug}/schedule [get]
+func (ctrl *MovieHomeController) GetMovieSchedule(c *gin.Context) {
+	slug := c.Param("slug")
+	location := c.Query("location")
+
+	schedules, err := ctrl.movieHomeService.GetScheduleBySlugAndLocation(c.Request.Context(), slug, location)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Internal server processing error",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   schedules,
 	})
 }
