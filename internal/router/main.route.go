@@ -11,8 +11,10 @@ import (
 
 func InitRouter(router *gin.Engine, db *pgxpool.Pool) {
 	router.Use(middleware.CORSMiddleware)
+	router.Static("/img", "./public/img")
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	RegisterAuthRouter(router, db)
+	RegisterMovieRouter(router, db)
 }

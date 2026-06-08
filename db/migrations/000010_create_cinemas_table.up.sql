@@ -5,4 +5,4 @@ CREATE TABLE "cinemas" (
   "created_at" timestamp DEFAULT (now())
 );
 
-ALTER TABLE "cinemas" ADD FOREIGN KEY ("location_id") REFERENCES "location" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE "cinemas" ADD FOREIGN KEY ("location_id") REFERENCES "locations" ("id") DEFERRABLE INITIALLY IMMEDIATE;

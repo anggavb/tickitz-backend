@@ -20,7 +20,7 @@ type NewOTPRequest struct {
 }
 
 type LoginResponse struct {
-	Id    int    `json:"id,omitempty"`
-	Token string `json:"token,omitempty"`
-	Photo string `json:"photo,omitempty"`
+	Id    int    `json:"id"`
+	Token string `json:"token"`
+	Photo string `json:"photo"`
 }
