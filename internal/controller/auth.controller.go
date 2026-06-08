@@ -305,6 +305,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 	data, err := c.authService.Login(ctx.Request.Context(), user.Email, user.Password)
 	if err != nil {
 		response.Error(ctx, http.StatusBadRequest, err.Error())
+		return
 	}
 	response.Success(
 		ctx,
