@@ -2,6 +2,7 @@ tmp
 public/docs/*
 public/img/*
 !public/**/README.md
-
+docs
 .env*
 .air.toml
+docker-compose.yml
