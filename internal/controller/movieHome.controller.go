@@ -23,39 +23,61 @@ func NewMovieHomeController(movieHomeService *service.MovieHomeService) *MovieHo
 }
 
 // GetBySlug godoc
-// @Summary      Get a movie by its slug
+// @Summary      Get a Movie by its slug
 // @Description  Retrieve detailed information about a specific movie using its unique URI slug.
-// @Tags         movies
+// @Tags         Movies
 // @Accept       json
 // @Produce      json
-// @Param slug path string true "Movie Slug"
-// @Success 200 {object} dto.MovieSingleResponse
-// @Failure 400 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
+// @Param        slug  path      string  true  "Movie Slug"
+// @Success      200   {object}  dto.MovieDetailWrappedResponse
+// @Failure      400   {object}  dto.ErrorResponse
+// @Failure      404   {object}  dto.ErrorResponse
+// @Failure      500   {object}  dto.ErrorResponse
 // @Router       /movies/{slug} [get]
 func (c *MovieHomeController) GetBySlug(ctx *gin.Context) {
 	slug := ctx.Param("slug")
-
-	movie, err := c.movieHomeService.GetBySlug(ctx.Request.Context(), slug)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			ctx.JSON(http.StatusNotFound, gin.H{
-				"success": false,
-				"message": "Movie not found",
-			})
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "Failed to get movie",
+	if slug == "" {
+		ctx.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  "error",
+			Message: "Slug parameter is required",
 		})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    buildMovieResponse(movie),
+	movie, err := c.movieHomeService.GetBySlug(ctx.Request.Context(), slug)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
+			ctx.JSON(http.StatusNotFound, dto.ErrorResponse{
+				Status:  "error",
+				Message: "Movie not found",
+			})
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to get movie",
+		})
+		return
+	}
+
+	// Map domain model -> new MovieDetailResponse DTO
+	movieDetail := dto.MovieDetailResponse{
+		ID:               movie.ID,
+		Title:            movie.Name,
+		ReleaseDate:      movie.ReleaseDate.Format("2006-01-02"),
+		DurationInMinute: movie.DurationInMinute,
+		DirectorName:     movie.DirectorName,
+		Synopsis:         movie.Synopsis,
+		ImagePoster:      movie.Image,
+		GenresCategories: movie.Categories,
+		Casts:            movie.Casts,
+	}
+
+	// Return wrapped response using string status fields
+	ctx.JSON(http.StatusOK, dto.MovieDetailWrappedResponse{
+		Status: "success",
+		Data:   movieDetail,
 	})
 }
 
@@ -78,9 +100,8 @@ func (ctrl *MovieHomeController) GetMovieSchedule(c *gin.Context) {
 
 	schedules, err := ctrl.movieHomeService.GetScheduleBySlugAndLocation(c.Request.Context(), slug, location)
 	if err != nil {
-		// If using standard database/sql, check for sql.ErrNoRows.
-		// Alternatively, check against your own domain error (e.g., service.ErrMovieNotFound).
-		if errors.Is(err, sql.ErrNoRows) || err.Error() == "movie not found" {
+		// Use errors.Is to safely compare sentinel errors across package boundaries
+		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusNotFound, dto.ErrorResponse{
 				Status:  "error",
 				Message: fmt.Sprintf("Movie schedule for slug '%s' could not be found", slug),
@@ -88,7 +109,7 @@ func (ctrl *MovieHomeController) GetMovieSchedule(c *gin.Context) {
 			return
 		}
 
-		// Fallback for true system failures
+		// Fallback for true system failures (keeps internal details hidden)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Status:  "error",
 			Message: "Internal server processing error",
@@ -96,6 +117,8 @@ func (ctrl *MovieHomeController) GetMovieSchedule(c *gin.Context) {
 		return
 	}
 
+	// If a location filter was provided but returned nothing, should it be a 404 or empty 200?
+	// Right now, an empty slice [] will return a 200 OK status.
 	c.JSON(http.StatusOK, dto.MovieScheduleWrappedResponse{
 		Status: "success",
 		Data:   schedules,

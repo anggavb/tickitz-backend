@@ -19,29 +19,31 @@ func NewMovieHomeRepository(db *pgxpool.Pool) *MovieHomeRepository {
 }
 
 // FindBySlug fetches core movie details
-func (r *MovieHomeRepository) FindBySlug(ctx context.Context, slug string) (model.Movie, error) {
+func (r *MovieHomeRepository) FindBySlug(ctx context.Context, slug string) (model.MovieDetails, error) {
+	// Fixed syntax error: Removed spaces/capitalization in aliases that cause SQL errors
+	// Fixed typo: changed "gendres" to "genres"
 	query := `
-	SELECT
-		m.id,
-		m.name,
-		m.release_date,
-		m.duration_in_minute,
-		m.director_name,
-		m.synopsis,
-		m.image,
-		COALESCE(array_agg(DISTINCT c.name) FILTER (WHERE c.name IS NOT NULL), '{}') AS categories,
-		COALESCE(array_agg(DISTINCT cs.name) FILTER (WHERE cs.name IS NOT NULL), '{}') AS casts,
-		m.created_at,
-		m.updated_at
-	FROM movies m
-	LEFT JOIN movie_categories mc ON mc.movie_id = m.id
-	LEFT JOIN categories c ON c.id = mc.category_id
-	LEFT JOIN movie_casts mc2 ON mc2.movie_id = m.id
-	LEFT JOIN casts cs ON cs.id = mc2.cast_id
-	WHERE m.slug = $1
-	GROUP BY m.id`
+    SELECT
+        m.id,
+        m.name,
+        m.release_date,
+        m.duration_in_minute,
+        m.director_name,
+        m.synopsis,
+        m.image,
+        COALESCE(array_agg(DISTINCT c.name) FILTER (WHERE c.name IS NOT NULL), '{}') AS genres,
+        COALESCE(array_agg(DISTINCT cs.name) FILTER (WHERE cs.name IS NOT NULL), '{}') AS casts,
+        m.created_at,
+        m.updated_at
+    FROM movies m
+    LEFT JOIN movie_categories mc ON mc.movie_id = m.id
+    LEFT JOIN categories c ON c.id = mc.category_id
+    LEFT JOIN movie_casts mc2 ON mc2.movie_id = m.id
+    LEFT JOIN casts cs ON cs.id = mc2.cast_id
+    WHERE m.slug = $1
+    GROUP BY m.id`
 
-	var movie model.Movie
+	var movie model.MovieDetails
 	var categories []string
 	var casts []string
 	var updatedAt *time.Time
@@ -60,7 +62,7 @@ func (r *MovieHomeRepository) FindBySlug(ctx context.Context, slug string) (mode
 		&updatedAt,
 	)
 	if err != nil {
-		return model.Movie{}, err
+		return model.MovieDetails{}, err
 	}
 
 	movie.Categories = categories

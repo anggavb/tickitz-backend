@@ -20,6 +20,23 @@ type MovieScheduleWrappedResponse struct {
 	Data   []LocationScheduleResponse `json:"data"`
 }
 
+type MovieDetailResponse struct {
+	ID               int64    `json:"id"`
+	Title            string   `json:"title"`
+	ReleaseDate      string   `json:"release_date"` // Formatted as "YYYY-MM-DD"
+	DurationInMinute int      `json:"duration_in_min"`
+	DirectorName     string   `json:"director_name"`
+	Synopsis         string   `json:"synopsis"`
+	ImagePoster      string   `json:"image_poster"`
+	GenresCategories []string `json:"genres_categories"`
+	Casts            []string `json:"casts"`
+}
+
+type MovieDetailWrappedResponse struct {
+	Status string              `json:"status" example:"success"`
+	Data   MovieDetailResponse `json:"data"`
+}
+
 // ErrorResponse handles consistent error formatting for clients
 type ErrorResponse struct {
 	Status  string `json:"status" example:"error"`

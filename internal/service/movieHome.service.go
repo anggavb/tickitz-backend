@@ -20,7 +20,7 @@ func NewMovieHomeService(movieHomeRepo *repository.MovieHomeRepository) *MovieHo
 	}
 }
 
-func (s *MovieHomeService) GetBySlug(ctx context.Context, slug string) (model.Movie, error) {
+func (s *MovieHomeService) GetBySlug(ctx context.Context, slug string) (model.MovieDetails, error) {
 	return s.movieHomeRepo.FindBySlug(ctx, slug)
 }
 func (s *MovieHomeService) GetScheduleBySlugAndLocation(ctx context.Context, slug string, location string) ([]dto.LocationScheduleResponse, error) {
