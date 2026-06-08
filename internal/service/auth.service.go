@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"log"
 	"time"
 
@@ -167,4 +169,37 @@ func (s *AuthService) generateOTP() (string, string) {
 	hashedOTP := hc.Hash(otp)
 
 	return otp, hashedOTP
+}
+
+func (s *AuthService) Login(ctx context.Context, email, password string) (dto.LoginResponse, error) {
+	user, err := s.authRepo.GetUserPassword(ctx, email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return dto.LoginResponse{}, errs.ErrEmailNotFound
+		}
+		return dto.LoginResponse{}, err
+	}
+
+	var hc pkg.HashConfig
+	hc.OwaspRecomendedHashConfig()
+
+	if err := hc.Compare(password, user.Password); err != nil {
+		return dto.LoginResponse{}, errs.ErrInvalidCredentials
+	}
+
+	claims := pkg.NewClaims(user.Id, email)
+
+	token, err := claims.GenJWT()
+	if err != nil {
+		log.Printf("[Login] Generate JWT error: %v\n", err)
+		return dto.LoginResponse{}, errs.ErrInternalServer
+	}
+	data := dto.LoginResponse{
+		Id:    user.Id,
+		Photo: user.Photo,
+		Token: token,
+	}
+
+	return data, nil
+
 }

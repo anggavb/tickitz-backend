@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tickitz-backend/internal/model"
 )
 
 type AuthRepository struct {
@@ -127,4 +128,22 @@ func (r *AuthRepository) UpdateOTP(ctx context.Context, email string, token stri
 
 	_, err := r.db.Exec(ctx, sql, token, email)
 	return err
+}
+
+func (r *AuthRepository) GetUserPassword(ctx context.Context, email string) (model.GetUserLogin, error) {
+	sql := `SELECT id, password, COALESCE(photo, '') FROM users WHERE email=$1`
+
+	var user model.GetUserLogin
+
+	err := r.db.QueryRow(ctx, sql, email).Scan(
+		&user.Id,
+		&user.Password,
+		&user.Photo,
+	)
+
+	if err != nil {
+		return model.GetUserLogin{}, err
+	}
+
+	return user, nil
 }

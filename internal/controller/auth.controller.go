@@ -268,3 +268,48 @@ func (c *AuthController) GetNewOTP(ctx *gin.Context) {
 		},
 	)
 }
+
+func (c *AuthController) Login(ctx *gin.Context) {
+	var user dto.LoginRequest
+
+	if err := ctx.ShouldBindJSON(&user); err != nil {
+
+		if strings.Contains(err.Error(), "Email") &&
+			strings.Contains(err.Error(), "email") {
+			response.Error(
+				ctx,
+				http.StatusBadRequest,
+				"Email format is invalid",
+			)
+			return
+		}
+
+		if strings.Contains(err.Error(), "Password") &&
+			strings.Contains(err.Error(), "min") {
+			response.Error(
+				ctx,
+				http.StatusBadRequest,
+				"Password must be at least 8 characters",
+			)
+			return
+		}
+
+		response.Error(
+			ctx,
+			http.StatusBadRequest,
+			"Invalid request",
+		)
+		return
+	}
+
+	data, err := c.authService.Login(ctx.Request.Context(), user.Email, user.Password)
+	if err != nil {
+		response.Error(ctx, http.StatusBadRequest, err.Error())
+	}
+	response.Success(
+		ctx,
+		http.StatusOK,
+		"Login success",
+		data,
+	)
+}
