@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -92,12 +93,25 @@ func (r *AuthRepository) GetUserToken(ctx context.Context, email string) (string
 }
 
 func (r *AuthRepository) Activate(ctx context.Context, email string) error {
-	sql := `UPDATE users SET verified_at = NOW(), updated_at = NOW() WHERE email = $1`
+	sql := `
+		UPDATE users
+		SET
+			verified_at = NOW(),
+			activation_token = NULL,
+			token_expire_at = NULL,
+			updated_at = NOW()
+		WHERE email = $1
+	`
 
-	_, err := r.db.Exec(ctx, sql, email)
+	result, err := r.db.Exec(ctx, sql, email)
 	if err != nil {
 		return err
 	}
+
+	if result.RowsAffected() == 0 {
+		return errors.New("user not found")
+	}
+
 	return nil
 }
 
