@@ -2,11 +2,9 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/tickitz-backend/internal/dto"
 	"github.com/tickitz-backend/internal/model"
 )
 
@@ -73,85 +71,57 @@ func (r *MovieHomeRepository) FindBySlug(ctx context.Context, slug string) (mode
 }
 
 // FindScheduleBySlug fetches the deeply nested location/cinema/showtime layout
-func (r *MovieHomeRepository) FindScheduleBySlugAndLocation(ctx context.Context, slug string, location string) ([]dto.LocationScheduleResponse, error) {
-	query := `
-		WITH showtimes_per_date AS (
-			SELECT
-				c.location_id,
-				c.id AS cinema_id,
-				c.name AS cinema_name,
-				to_char(s.show_time, 'DD Month YYYY') AS show_date,
-				jsonb_agg(to_char(s.show_time, 'HH24:MI') ORDER BY s.show_time) AS times,
-				min(s.show_time) AS base_date
-			FROM
-				movie_cinemas mc
-				JOIN cinemas c ON c.id = mc.cinema_id
-				JOIN locations il ON il.id = c.location_id
-				JOIN showtimes s ON s.movie_cinema_id = mc.id
-				JOIN movies m ON m.id = mc.movie_id
-			WHERE
-				m.slug = $1
-				-- If $2 is empty string, this filter passes all records. Otherwise, it filters by location name.
-				AND ($2 = '' OR il.name ILIKE '%' || $2 || '%')
-			GROUP BY
-				c.location_id, c.id, c.name, to_char(s.show_time, 'DD Month YYYY')
-		),
-		cinema_dates AS (
-			SELECT
-				location_id,
-				jsonb_build_object(
-					'cinema_name', cinema_name,
-					'dates', jsonb_agg(
-						jsonb_build_object(
-							'date', trim(regexp_replace(show_date, '\s+', ' ', 'g')),
-							'showtimes', times
-						) ORDER BY base_date
-					)
-				) AS cinema_data
-			FROM
-				showtimes_per_date
-			GROUP BY
-				location_id, cinema_id, cinema_name
-		)
-		SELECT
-			l.name AS location,
-			jsonb_agg(cd.cinema_data) AS cinemas
-		FROM
-			cinema_dates cd
-			JOIN locations l ON l.id = cd.location_id
-		GROUP BY
-			l.id, l.name
-		ORDER BY 
-			l.name;
-	`
+// func (r *MovieHomeRepository) FindScheduleBySlugAndLocation(ctx context.Context, slug string, location string) ([]dto.LocationScheduleResponse, error) {
+// 	query := `
+// 		SELECT
+//     l.name AS location,
+//     c.name AS cinema_name,
+//     s.show_time AS showtime
+// FROM
+//     movie_cinemas mc
+//     JOIN cinemas c ON c.id = mc.cinema_id
+//     JOIN locations l ON l.id = c.location_id
+//     JOIN showtimes s ON s.movie_cinema_id = mc.id
+//     JOIN movies m ON m.id = mc.movie_id
+// WHERE
+//     m.slug = $1
+//     AND $2 = mc.start_date <= mc.end_date
+//     AND ($3 = ''
+//         OR l.name ILIKE '%' || $2 || '%');
 
-	// Using Query instead of QueryRow because it can return 1 or more rows depending on the location filter
-	rows, err := r.db.Query(ctx, query, slug, location)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+// ORDER BY
+//     l.name,
+//     c.name,
+//     s.show_time;
+// 	`
 
-	var schedules []dto.LocationScheduleResponse
+// 	// Using Query instead of QueryRow because it can return 1 or more rows depending on the location filter
+// 	rows, err := r.db.Query(ctx, query, slug, location)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
 
-	for rows.Next() {
-		var loc dto.LocationScheduleResponse
-		var cinemasRaw []byte
+// 	var schedules []dto.LocationScheduleResponse
 
-		if err := rows.Scan(&loc.Location, &cinemasRaw); err != nil {
-			return nil, err
-		}
+// 	for rows.Next() {
+// 		var loc dto.LocationScheduleResponse
+// 		var cinemasRaw []byte
 
-		if err := json.Unmarshal(cinemasRaw, &loc.Cinemas); err != nil {
-			return nil, err
-		}
+// 		if err := rows.Scan(&loc.Location, &cinemasRaw); err != nil {
+// 			return nil, err
+// 		}
 
-		schedules = append(schedules, loc)
-	}
+// 		if err := json.Unmarshal(cinemasRaw, &loc.Cinemas); err != nil {
+// 			return nil, err
+// 		}
 
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
+// 		schedules = append(schedules, loc)
+// 	}
 
-	return schedules, nil
-}
+// 	if err := rows.Err(); err != nil {
+// 		return nil, err
+// 	}
+
+// 	return schedules, nil
+// }
