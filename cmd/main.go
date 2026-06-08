@@ -15,10 +15,10 @@ import (
 // @version						1.0
 // @description					API documentation for Tickitz backend application
 
-// @license.name				MIT
+// @license.name			MIT
 
-// @host						localhost:8080
-// @BasePath					/
+// @host					localhost:8081
+// @BasePath				/
 
 // @securityDefinitions.apikey	ApiKeyAuth
 // @in							header

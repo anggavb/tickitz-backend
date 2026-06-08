@@ -24,3 +24,16 @@ type MovieResponse struct {
 	CreatedAt        string   `json:"created_at,omitempty"`
 	UpdatedAt        string   `json:"updated_at,omitempty"`
 }
+
+// MovieListResponse is the wrapper for list responses
+type MovieListResponse struct {
+	Success    bool            `json:"success"`
+	Data       []MovieResponse `json:"data"`
+	Pagination interface{}     `json:"pagination"`
+}
+
+// MovieSingleResponse is the wrapper for single movie responses
+type MovieSingleResponse struct {
+	Success bool          `json:"success"`
+	Data    MovieResponse `json:"data"`
+}

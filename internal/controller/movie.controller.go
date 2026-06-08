@@ -25,6 +25,17 @@ func NewMovieController(movieService *service.MovieService) *MovieController {
 	return &MovieController{movieService: movieService}
 }
 
+// ListMovies godoc
+// @Summary Get list of movies
+// @Description Get paginated list of movies
+// @Tags Movies
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number"
+// @Param limit query int false "Limit per page"
+// @Success 200 {object} dto.MovieListResponse
+// @Failure 500 {object} map[string]interface{}
+// @Router /admin/movies [get]
 func (c *MovieController) List(ctx *gin.Context) {
 	page := 1
 	limit := 5
@@ -57,6 +68,17 @@ func (c *MovieController) List(ctx *gin.Context) {
 	})
 }
 
+// GetMovieByID godoc
+// @Summary Get movie by ID
+// @Description Get movie by ID
+// @Tags Movies
+// @Accept json
+// @Produce json
+// @Param id path int true "Movie ID"
+// @Success 200 {object} dto.MovieSingleResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Router /admin/movies/{id} [get]
 func (c *MovieController) GetByID(ctx *gin.Context) {
 	movieID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil || movieID <= 0 {
