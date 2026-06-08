@@ -92,7 +92,7 @@ func (r *AuthRepository) GetUserToken(ctx context.Context, email string) (string
 }
 
 func (r *AuthRepository) Activate(ctx context.Context, email string) error {
-	sql := `UPDATE users SET verified_at = NOW() WHERE email = $1`
+	sql := `UPDATE users SET verified_at = NOW(), updated_at = NOW() WHERE email = $1`
 
 	_, err := r.db.Exec(ctx, sql, email)
 	if err != nil {
@@ -106,7 +106,8 @@ func (r *AuthRepository) UpdateOTP(ctx context.Context, email string, token stri
 		UPDATE users
 		SET
 			activation_token = $1,
-			token_expire_at = NOW() + INTERVAL '60 minutes'
+			token_expire_at = NOW() + INTERVAL '60 minutes',
+			updated_at = NOW() 
 		WHERE email = $2
 	`
 
