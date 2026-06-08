@@ -1,10 +1,11 @@
-INSERT INTO cinemas (id, location_id, name) VALUES
-  (1, 1, 'Tickitz Plaza Senayan'),
-  (2, 2, 'Tickitz Paris Van Java'),
-  (3, 3, 'Tickitz Tunjungan Plaza')
+INSERT INTO cinemas (id, location_id, name, logo) VALUES
+  (1, 1, 'Tickitz Plaza Senayan', '/cinemas/tickitz-plaza-senayan.jpg'),
+  (2, 2, 'Tickitz Paris Van Java', '/cinemas/tickitz-paris-van-java.jpg'),
+  (3, 3, 'Tickitz Tunjungan Plaza', '/cinemas/tickitz-tunjungan-plaza.jpg')
 ON CONFLICT (id) DO UPDATE SET
   location_id = EXCLUDED.location_id,
-  name = EXCLUDED.name;
+  name = EXCLUDED.name,
+  logo = EXCLUDED.logo;
 
 SELECT setval(pg_get_serial_sequence('cinemas', 'id'), COALESCE((SELECT MAX(id) FROM cinemas), 1), true);
 
