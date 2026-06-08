@@ -317,6 +317,7 @@ func buildMovieResponse(movie model.Movie) dto.MovieResponse {
 	response := dto.MovieResponse{
 		ID:               movie.ID,
 		Name:             movie.Name,
+		Slug:             movie.Slug,
 		ReleaseDate:      movie.ReleaseDate.Format("2006-01-02"),
 		DurationInMinute: movie.DurationInMinute,
 		DirectorName:     movie.DirectorName,

@@ -14,6 +14,7 @@ type MovieRequest struct {
 type MovieResponse struct {
 	ID               int64    `json:"id"`
 	Name             string   `json:"name"`
+	Slug             string   `json:"slug,omitempty"`
 	ReleaseDate      string   `json:"release_date"`
 	DurationInMinute int      `json:"duration_in_minute"`
 	DirectorName     string   `json:"director_name,omitempty"`
