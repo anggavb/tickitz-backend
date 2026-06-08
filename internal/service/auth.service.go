@@ -71,6 +71,16 @@ func (s *AuthService) Register(ctx context.Context, req dto.RegisterRequest) err
 
 		return nil
 	}
+
+	subject := "[TICKITZ] Activation OTP"
+	body := "Ini adalah kode OTP anda : \n\n" + OTP
+
+	if err := pkg.SendMail([]string{req.Email}, subject, body); err != nil {
+		log.Printf("[OTP] Send email error: %v\n", err)
+		return errs.ErrInternalServer
+	}
+
+	log.Printf("[OTP] New OTP sent successfully to %s\n", req.Email)
 	return nil
 
 }
