@@ -1,11 +1,14 @@
 package controller
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
+	"github.com/tickitz-backend/internal/dto"
 	"github.com/tickitz-backend/internal/service"
 )
 
@@ -65,8 +68,9 @@ func (c *MovieHomeController) GetBySlug(ctx *gin.Context) {
 //	@Produce		json
 //	@Param			slug		path		string	true	"Movie Slug (e.g., echoes-of-jakarta)"
 //	@Param			location	query		string	false	"Filter by specific city/region location name"
-//	@Success		200			{object}	dto.LocationScheduleResponse "Successfully retrieved schedules"
-//	@Failure		500			{object}	map[string]string "Internal server error"
+//	@Success		200			{object}	dto.MovieScheduleWrappedResponse	"Successfully retrieved schedules"
+//	@Failure		404			{object}	dto.ErrorResponse					"Movie or location not found"
+//	@Failure		500			{object}	dto.ErrorResponse					"Internal server error"
 //	@Router			/movies/{slug}/schedule [get]
 func (ctrl *MovieHomeController) GetMovieSchedule(c *gin.Context) {
 	slug := c.Param("slug")
@@ -74,15 +78,26 @@ func (ctrl *MovieHomeController) GetMovieSchedule(c *gin.Context) {
 
 	schedules, err := ctrl.movieHomeService.GetScheduleBySlugAndLocation(c.Request.Context(), slug, location)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  "error",
-			"message": "Internal server processing error",
+		// If using standard database/sql, check for sql.ErrNoRows.
+		// Alternatively, check against your own domain error (e.g., service.ErrMovieNotFound).
+		if errors.Is(err, sql.ErrNoRows) || err.Error() == "movie not found" {
+			c.JSON(http.StatusNotFound, dto.ErrorResponse{
+				Status:  "error",
+				Message: fmt.Sprintf("Movie schedule for slug '%s' could not be found", slug),
+			})
+			return
+		}
+
+		// Fallback for true system failures
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Status:  "error",
+			Message: "Internal server processing error",
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   schedules,
+	c.JSON(http.StatusOK, dto.MovieScheduleWrappedResponse{
+		Status: "success",
+		Data:   schedules,
 	})
 }

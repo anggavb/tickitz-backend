@@ -14,3 +14,14 @@ type LocationScheduleResponse struct {
 	Location string                   `json:"location"`
 	Cinemas  []CinemaShowtimeResponse `json:"cinemas"`
 }
+
+type MovieScheduleWrappedResponse struct {
+	Status string                     `json:"status" example:"success"`
+	Data   []LocationScheduleResponse `json:"data"`
+}
+
+// ErrorResponse handles consistent error formatting for clients
+type ErrorResponse struct {
+	Status  string `json:"status" example:"error"`
+	Message string `json:"message" example:"Detailed error message here"`
+}
