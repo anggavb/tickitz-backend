@@ -2,9 +2,11 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tickitz-backend/internal/model"
 )
 
 type AuthRepository struct {
@@ -92,12 +94,25 @@ func (r *AuthRepository) GetUserToken(ctx context.Context, email string) (string
 }
 
 func (r *AuthRepository) Activate(ctx context.Context, email string) error {
-	sql := `UPDATE users SET verified_at = NOW(), updated_at = NOW() WHERE email = $1`
+	sql := `
+		UPDATE users
+		SET
+			verified_at = NOW(),
+			activation_token = NULL,
+			token_expire_at = NULL,
+			updated_at = NOW()
+		WHERE email = $1
+	`
 
-	_, err := r.db.Exec(ctx, sql, email)
+	result, err := r.db.Exec(ctx, sql, email)
 	if err != nil {
 		return err
 	}
+
+	if result.RowsAffected() == 0 {
+		return errors.New("user not found")
+	}
+
 	return nil
 }
 
@@ -113,4 +128,22 @@ func (r *AuthRepository) UpdateOTP(ctx context.Context, email string, token stri
 
 	_, err := r.db.Exec(ctx, sql, token, email)
 	return err
+}
+
+func (r *AuthRepository) GetUserPassword(ctx context.Context, email string) (model.GetUserLogin, error) {
+	sql := `SELECT id, password, COALESCE(photo, '') FROM users WHERE email=$1`
+
+	var user model.GetUserLogin
+
+	err := r.db.QueryRow(ctx, sql, email).Scan(
+		&user.Id,
+		&user.Password,
+		&user.Photo,
+	)
+
+	if err != nil {
+		return model.GetUserLogin{}, err
+	}
+
+	return user, nil
 }

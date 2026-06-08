@@ -25,7 +25,6 @@ import (
 // @name						Authorization
 // @description					Bearer token used for authorization. Example: Bearer <token>
 func main() {
-	fmt.Println("masuk")
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Error loading env. \ncause: %s", err.Error())
 	}

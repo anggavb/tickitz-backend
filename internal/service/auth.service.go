@@ -2,10 +2,11 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"log"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/tickitz-backend/internal/dto"
 	"github.com/tickitz-backend/internal/errs"
 	"github.com/tickitz-backend/internal/repository"
@@ -31,7 +32,7 @@ func (s *AuthService) Register(ctx context.Context, req dto.RegisterRequest) err
 	}
 
 	if isAccountNotActive {
-		log.Printf("[Register] Email haven't activate yet: %s\n", req.Email)
+		log.Printf("[Register] Email not activated: %s\n", req.Email)
 		return errs.ErrAccountNotActive
 	}
 
@@ -51,51 +52,53 @@ func (s *AuthService) Register(ctx context.Context, req dto.RegisterRequest) err
 
 	hashedPassword := hc.Hash(req.Password)
 
-	OTP := pkg.GenerateOTP()
-	hashedOTP := hc.Hash(OTP)
+	otp, hashedOTP := s.generateOTP()
 
-	if _, err := s.authRepo.Create(ctx, req.Email, hashedPassword, hashedOTP); err != nil {
-		token := uuid.NewString()
-
-		if _, err := s.authRepo.Create(ctx, req.Email, hashedPassword, token); err != nil {
-			log.Printf("[Register] Create user error: %v\n", err)
-			return errs.ErrInternalServer
-		}
-
-		subject := "[TICKITZ] Activation Account"
-		body := "Ini adalah kode OTP anda : \n\n" + OTP
-		if err := pkg.SendMail([]string{req.Email}, subject, body); err != nil {
-			log.Printf("[Register] Send email error: %v\n", err)
-			return errs.ErrInternalServer
-		}
-
-		return nil
+	if _, err := s.authRepo.Create(
+		ctx,
+		req.Email,
+		hashedPassword,
+		hashedOTP,
+	); err != nil {
+		log.Printf("[Register] Create user error: %v\n", err)
+		return errs.ErrInternalServer
 	}
-	return nil
 
+	if err := pkg.SendMail(
+		[]string{req.Email},
+		"[TICKITZ] Activation OTP",
+		"Ini adalah kode OTP anda : \n\n"+otp,
+	); err != nil {
+		log.Printf("[Register] Send email error: %v\n", err)
+		return errs.ErrInternalServer
+	}
+
+	log.Printf("[Register] OTP sent successfully to %s\n", req.Email)
+
+	return nil
 }
 
 func (s *AuthService) Activate(ctx context.Context, req dto.ActivationRequest) error {
 
 	isAccountNotActive, err := s.authRepo.FindByEmailAndActivate(ctx, req.Email)
 	if err != nil {
-		log.Printf("[Activate] FindByEmailAndActivate error: %v", err)
+		log.Printf("[Activate] FindByEmailAndActivate error: %v\n", err)
 		return errs.ErrInternalServer
 	}
 
 	if !isAccountNotActive {
-		log.Printf("[Activate] Account already activated: %s", req.Email)
+		log.Printf("[Activate] Account already activated: %s\n", req.Email)
 		return errs.ErrAccountActivated
 	}
 
 	expiryToken, err := s.authRepo.GetExpiryToken(ctx, req.Email)
 	if err != nil {
-		log.Printf("[Activate] GetExpiryToken error: %v", err)
+		log.Printf("[Activate] GetExpiryToken error: %v\n", err)
 		return errs.ErrInternalServer
 	}
 
 	if time.Now().After(expiryToken) {
-		log.Printf("[Activate] Token expired for %s", req.Email)
+		log.Printf("[Activate] Token expired for %s\n", req.Email)
 		return errs.ErrTokenExpired
 	}
 
@@ -104,21 +107,21 @@ func (s *AuthService) Activate(ctx context.Context, req dto.ActivationRequest) e
 
 	existingToken, err := s.authRepo.GetUserToken(ctx, req.Email)
 	if err != nil {
-		log.Printf("[Activate] GetUserToken error: %v", err)
+		log.Printf("[Activate] GetUserToken error: %v\n", err)
 		return errs.ErrInternalServer
 	}
 
 	if err := hc.Compare(req.OTP, existingToken); err != nil {
-		log.Printf("[Activate] Invalid OTP for %s", req.Email)
+		log.Printf("[Activate] Invalid OTP for %s\n", req.Email)
 		return errs.ErrInvalidOTP
 	}
 
 	if err := s.authRepo.Activate(ctx, req.Email); err != nil {
-		log.Printf("[Activate] Activate error: %v", errs.ErrInvalidOTP)
+		log.Printf("[Activate] Activate error: %v\n", err)
 		return errs.ErrInternalServer
 	}
 
-	log.Printf("[Activate] Account activated successfully: %s", req.Email)
+	log.Printf("[Activate] Account activated successfully: %s\n", req.Email)
 
 	return nil
 }
@@ -136,26 +139,67 @@ func (s *AuthService) GetNewOTP(ctx context.Context, req dto.NewOTPRequest) erro
 		return errs.ErrAccountActivated
 	}
 
-	var hc pkg.HashConfig
-	hc.OwaspRecomendedHashConfig()
-
-	otp := pkg.GenerateOTP()
-	hashedOTP := hc.Hash(otp)
+	otp, hashedOTP := s.generateOTP()
 
 	if err := s.authRepo.UpdateOTP(ctx, req.Email, hashedOTP); err != nil {
 		log.Printf("[GetNewOTP] UpdateOTP error: %v\n", err)
 		return errs.ErrInternalServer
 	}
 
-	subject := "[TICKITZ] New Activation OTP"
-	body := "Ini adalah kode OTP baru anda : \n\n" + otp
-
-	if err := pkg.SendMail([]string{req.Email}, subject, body); err != nil {
+	if err := pkg.SendMail(
+		[]string{req.Email},
+		"[TICKITZ] New Activation OTP",
+		"Ini adalah kode OTP baru anda : \n\n"+otp,
+	); err != nil {
 		log.Printf("[GetNewOTP] Send email error: %v\n", err)
 		return errs.ErrInternalServer
 	}
 
-	log.Printf("[GetNewOTP] New OTP sent successfully to %s\n", req.Email)
+	log.Printf("[GetNewOTP] OTP sent successfully to %s\n", req.Email)
 
 	return nil
+}
+
+func (s *AuthService) generateOTP() (string, string) {
+	var hc pkg.HashConfig
+
+	hc.OwaspRecomendedHashConfig()
+
+	otp := pkg.GenerateOTP()
+	hashedOTP := hc.Hash(otp)
+
+	return otp, hashedOTP
+}
+
+func (s *AuthService) Login(ctx context.Context, email, password string) (dto.LoginResponse, error) {
+	user, err := s.authRepo.GetUserPassword(ctx, email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return dto.LoginResponse{}, errs.ErrEmailNotFound
+		}
+		return dto.LoginResponse{}, err
+	}
+
+	var hc pkg.HashConfig
+	hc.OwaspRecomendedHashConfig()
+
+	if err := hc.Compare(password, user.Password); err != nil {
+		return dto.LoginResponse{}, errs.ErrInvalidCredentials
+	}
+
+	claims := pkg.NewClaims(user.Id, email)
+
+	token, err := claims.GenJWT()
+	if err != nil {
+		log.Printf("[Login] Generate JWT error: %v\n", err)
+		return dto.LoginResponse{}, errs.ErrInternalServer
+	}
+	data := dto.LoginResponse{
+		Id:    user.Id,
+		Photo: user.Photo,
+		Token: token,
+	}
+
+	return data, nil
+
 }
