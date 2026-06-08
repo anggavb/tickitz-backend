@@ -19,7 +19,7 @@ func NewAuthRepository(db *pgxpool.Pool) *AuthRepository {
 
 func (r *AuthRepository) Create(ctx context.Context, email string, password string, token string) (int64, error) {
 	sql := `
-		INSERT INTO users (email, password, activation_token, verified_at, token_expiry_at)
+		INSERT INTO users (email, password, activation_token, verified_at, token_expire_at)
 			VALUES ($1, $2, $3, NULL, NOW() + INTERVAL '60 minutes')
 			RETURNING id
 		`
@@ -72,7 +72,7 @@ func (r *AuthRepository) FindByEmailAndActivate(ctx context.Context, email strin
 }
 
 func (r *AuthRepository) GetExpiryToken(ctx context.Context, email string) (time.Time, error) {
-	sql := `SELECT token_expiry_at FROM users WHERE email = $1;`
+	sql := `SELECT token_expire_at FROM users WHERE email = $1;`
 
 	var expiredAt time.Time
 	if err := r.db.QueryRow(ctx, sql, email).Scan(&expiredAt); err != nil {
@@ -106,7 +106,7 @@ func (r *AuthRepository) UpdateOTP(ctx context.Context, email string, token stri
 		UPDATE users
 		SET
 			activation_token = $1,
-			token_expiry_at = NOW() + INTERVAL '60 minutes'
+			token_expire_at = NOW() + INTERVAL '60 minutes'
 		WHERE email = $2
 	`
 
