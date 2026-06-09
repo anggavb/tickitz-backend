@@ -2,6 +2,14 @@ tmp
 public/docs/*
 public/img/*
 !public/**/README.md
-
+docs
 .env*
 .air.toml
+<<<<<<< HEAD
+docker-compose.yml
+=======
+docker-compose.yml
+
+
+location id
+>>>>>>> a326bd8 (feat : test)

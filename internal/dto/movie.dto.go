@@ -14,6 +14,7 @@ type MovieRequest struct {
 type MovieResponse struct {
 	ID               int64    `json:"id"`
 	Name             string   `json:"name"`
+	Slug             string   `json:"slug,omitempty"`
 	ReleaseDate      string   `json:"release_date"`
 	DurationInMinute int      `json:"duration_in_minute"`
 	DirectorName     string   `json:"director_name,omitempty"`
@@ -25,11 +26,19 @@ type MovieResponse struct {
 	UpdatedAt        string   `json:"updated_at,omitempty"`
 }
 
+// Meta contains pagination metadata
+type Meta struct {
+	Page      int   `json:"page"`
+	Limit     int   `json:"limit"`
+	TotalData int64 `json:"total_data"`
+	TotalPage int64 `json:"total_page"`
+}
+
 // MovieListResponse is the wrapper for list responses
 type MovieListResponse struct {
 	Success    bool            `json:"success"`
 	Data       []MovieResponse `json:"data"`
-	Pagination interface{}     `json:"pagination"`
+	Pagination Meta            `json:"pagination"`
 }
 
 // MovieSingleResponse is the wrapper for single movie responses

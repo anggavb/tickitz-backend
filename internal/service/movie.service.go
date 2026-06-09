@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/tickitz-backend/internal/dto"
 	"github.com/tickitz-backend/internal/model"
@@ -70,6 +72,7 @@ func (s *MovieService) Create(ctx context.Context, req dto.MovieRequest) (model.
 
 	movie := model.Movie{
 		Name:             req.Name,
+		Slug:             generateSlug(req.Name),
 		ReleaseDate:      releaseDate,
 		DurationInMinute: req.DurationInMinute,
 		DirectorName:     req.DirectorName,
@@ -96,6 +99,7 @@ func (s *MovieService) Update(ctx context.Context, movieID int64, req dto.MovieR
 	movie := model.Movie{
 		ID:               movieID,
 		Name:             req.Name,
+		Slug:             generateSlug(req.Name),
 		ReleaseDate:      releaseDate,
 		DurationInMinute: req.DurationInMinute,
 		DirectorName:     req.DirectorName,
@@ -112,4 +116,33 @@ func (s *MovieService) Update(ctx context.Context, movieID int64, req dto.MovieR
 
 func (s *MovieService) Delete(ctx context.Context, movieID int64) error {
 	return s.movieRepo.Delete(ctx, movieID)
+}
+
+func (s *MovieService) ListCategories(ctx context.Context) ([]string, error) {
+	return s.movieRepo.FindAllCategories(ctx)
+}
+
+func (s *MovieService) ListCasts(ctx context.Context) ([]string, error) {
+	return s.movieRepo.FindAllCasts(ctx)
+}
+
+func generateSlug(name string) string {
+	name = strings.TrimSpace(strings.ToLower(name))
+	var builder strings.Builder
+	prevHyphen := false
+
+	for _, r := range name {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			builder.WriteRune(r)
+			prevHyphen = false
+			continue
+		}
+		if !prevHyphen {
+			builder.WriteRune('-')
+			prevHyphen = true
+		}
+	}
+
+	slug := strings.Trim(builder.String(), "-")
+	return slug
 }

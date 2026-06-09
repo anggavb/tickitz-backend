@@ -61,10 +61,15 @@ func (c *MovieController) List(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"success":    true,
-		"data":       buildMovieListResponse(movies),
-		"pagination": pagination,
+	ctx.JSON(http.StatusOK, dto.MovieListResponse{
+		Success: true,
+		Data:    buildMovieListResponse(movies),
+		Pagination: dto.Meta{
+			Page:      pagination.Page,
+			Limit:     pagination.Limit,
+			TotalData: pagination.TotalData,
+			TotalPage: pagination.TotalPage,
+		},
 	})
 }
 
@@ -126,6 +131,38 @@ func (c *MovieController) Create(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"data":    buildMovieResponse(movie),
+	})
+}
+
+func (c *MovieController) ListCategories(ctx *gin.Context) {
+	categories, err := c.movieService.ListCategories(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to fetch categories",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    categories,
+	})
+}
+
+func (c *MovieController) ListCasts(ctx *gin.Context) {
+	casts, err := c.movieService.ListCasts(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to fetch casts",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    casts,
 	})
 }
 
@@ -312,6 +349,7 @@ func buildMovieResponse(movie model.Movie) dto.MovieResponse {
 	response := dto.MovieResponse{
 		ID:               movie.ID,
 		Name:             movie.Name,
+		Slug:             movie.Slug,
 		ReleaseDate:      movie.ReleaseDate.Format("2006-01-02"),
 		DurationInMinute: movie.DurationInMinute,
 		DirectorName:     movie.DirectorName,
