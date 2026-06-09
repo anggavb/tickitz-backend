@@ -23,6 +23,7 @@ func (r *MovieRepository) FindAll(ctx context.Context) ([]model.Movie, error) {
 SELECT
 	m.id,
 	m.name,
+	m.slug,
 	m.release_date,
 	m.duration_in_minute,
 	m.director_name,
@@ -57,6 +58,7 @@ ORDER BY m.created_at DESC
 		if err := rows.Scan(
 			&movie.ID,
 			&movie.Name,
+			&movie.Slug,
 			&movie.ReleaseDate,
 			&movie.DurationInMinute,
 			&movie.DirectorName,
@@ -93,6 +95,7 @@ func (r *MovieRepository) FindAllPaginated(ctx context.Context, limit int, offse
 SELECT
 	m.id,
 	m.name,
+	m.slug,
 	m.release_date,
 	m.duration_in_minute,
 	m.director_name,
@@ -128,6 +131,7 @@ LIMIT $1 OFFSET $2
 		if err := rows.Scan(
 			&movie.ID,
 			&movie.Name,
+			&movie.Slug,
 			&movie.ReleaseDate,
 			&movie.DurationInMinute,
 			&movie.DirectorName,
@@ -155,6 +159,7 @@ func (r *MovieRepository) FindByID(ctx context.Context, movieID int64) (model.Mo
 SELECT
 	m.id,
 	m.name,
+	m.slug,
 	m.release_date,
 	m.duration_in_minute,
 	m.director_name,
@@ -181,6 +186,7 @@ GROUP BY m.id
 	if err := r.db.QueryRow(ctx, sql, movieID).Scan(
 		&movie.ID,
 		&movie.Name,
+		&movie.Slug,
 		&movie.ReleaseDate,
 		&movie.DurationInMinute,
 		&movie.DirectorName,
@@ -213,6 +219,7 @@ func (r *MovieRepository) Create(ctx context.Context, movie model.Movie, categor
 	insertSQL := `
 INSERT INTO movies (
 	name,
+	slug,
 	release_date,
 	duration_in_minute,
 	director_name,
@@ -220,11 +227,12 @@ INSERT INTO movies (
 	image,
 	created_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, now())
+VALUES ($1, $2, $3, $4, $5, $6, $7, now())
 RETURNING id
 `
 	if err := tx.QueryRow(ctx, insertSQL,
 		movie.Name,
+		movie.Slug,
 		movie.ReleaseDate,
 		movie.DurationInMinute,
 		movie.DirectorName,
@@ -273,16 +281,18 @@ func (r *MovieRepository) Update(ctx context.Context, movie model.Movie, categor
 	updateSQL := `
 UPDATE movies
 SET name = $1,
-	release_date = $2,
-	duration_in_minute = $3,
-	director_name = $4,
-	synopsis = $5,
-	image = $6,
+	slug = $2,
+	release_date = $3,
+	duration_in_minute = $4,
+	director_name = $5,
+	synopsis = $6,
+	image = $7,
 	updated_at = now()
-WHERE id = $7
+WHERE id = $8
 `
 	cmd, err := tx.Exec(ctx, updateSQL,
 		movie.Name,
+		movie.Slug,
 		movie.ReleaseDate,
 		movie.DurationInMinute,
 		movie.DirectorName,

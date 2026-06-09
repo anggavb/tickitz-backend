@@ -1,9 +1,9 @@
 INSERT INTO loyalty_tiers (id, name, min_point) VALUES
-  (1, 'Nominee', 0),
-  (2, 'Laurels', 500),
-  (3, 'Silver Screen', 1500),
-  (4, 'Golden Statuette', 3000),
-  (5, 'Grand Prix / Palme d''Or', 5000)
+  (1, 'Bronze', 0),
+  (2, 'Silver', 500),
+  (3, 'Gold', 1500),
+  (4, 'Platinum', 3000),
+  (5, 'Diamond', 5000)
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   min_point = EXCLUDED.min_point;
