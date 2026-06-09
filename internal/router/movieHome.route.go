@@ -15,5 +15,6 @@ func HomeMovieRouter(router *gin.Engine, db *pgxpool.Pool) {
 	movieHomeService := service.NewMovieHomeService(movieHomeRepo)
 	movieHomeController := controller.NewMovieHomeController(movieHomeService)
 
-	movie.GET("/:slug", movieHomeController.GetBySlug)
+	movie.GET("/:slug", movieHomeController.GetMovieBySlug)
+
 }

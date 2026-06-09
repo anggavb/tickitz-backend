@@ -1,44 +1,38 @@
 package dto
 
-type DateScheduleResponse struct {
-	Date      string   `json:"date"`
-	Showtimes []string `json:"showtimes"`
+import "time"
+
+type MovieHomeDetailWrappedResponse struct {
+	Status  string                  `json:"status" example:"success"`
+	Message string                  `json:"message" example:"movie retrieved successfully"`
+	Data    MovieHomeDetailResponse `json:"data"`
 }
 
-type CinemaShowtimeResponse struct {
-	CinemaName string                 `json:"cinema_name"`
-	Dates      []DateScheduleResponse `json:"dates"`
+type MovieHomeDetailResponse struct {
+	ID               int64                      `json:"id"`
+	Title            string                     `json:"title"`
+	ReleaseDate      string                     `json:"release_date"`
+	DurationInMinute int                        `json:"duration_in_min"`
+	DirectorName     string                     `json:"director_name"`
+	Synopsis         string                     `json:"synopsis"`
+	ImagePoster      string                     `json:"image_poster"`
+	GenresCategories []string                   `json:"genres_categories"`
+	Casts            []string                   `json:"casts"`
+	Schedules        []LocationScheduleResponse `json:"schedules"`
+}
+
+type CinemaScheduleResponse struct {
+	CinemaName string   `json:"cinema_name"`
+	Showtimes  []string `json:"showtimes"`
 }
 
 type LocationScheduleResponse struct {
 	Location string                   `json:"location"`
-	Cinemas  []CinemaShowtimeResponse `json:"cinemas"`
+	Cinemas  []CinemaScheduleResponse `json:"cinemas"`
 }
 
-type MovieScheduleWrappedResponse struct {
-	Status string                     `json:"status" example:"success"`
-	Data   []LocationScheduleResponse `json:"data"`
-}
-
-type MovieDetailResponse struct {
-	ID               int64    `json:"id"`
-	Title            string   `json:"title"`
-	ReleaseDate      string   `json:"release_date"` // Formatted as "YYYY-MM-DD"
-	DurationInMinute int      `json:"duration_in_min"`
-	DirectorName     string   `json:"director_name"`
-	Synopsis         string   `json:"synopsis"`
-	ImagePoster      string   `json:"image_poster"`
-	GenresCategories []string `json:"genres_categories"`
-	Casts            []string `json:"casts"`
-}
-
-type MovieDetailWrappedResponse struct {
-	Status string              `json:"status" example:"success"`
-	Data   MovieDetailResponse `json:"data"`
-}
-
-// ErrorResponse handles consistent error formatting for clients
-type ErrorResponse struct {
-	Status  string `json:"status" example:"error"`
-	Message string `json:"message" example:"Detailed error message here"`
+type MovieScheduleRow struct {
+	Location   string
+	CinemaName string
+	Showtime   time.Time
 }

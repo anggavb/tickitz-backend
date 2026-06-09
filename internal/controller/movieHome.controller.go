@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	"github.com/tickitz-backend/internal/dto"
+	"github.com/tickitz-backend/internal/response"
 	"github.com/tickitz-backend/internal/service"
 )
 
@@ -21,61 +22,57 @@ func NewMovieHomeController(movieHomeService *service.MovieHomeService) *MovieHo
 	}
 }
 
-// GetBySlug godoc
-// @Summary      Get a Movie by its slug
-// @Description  Retrieve detailed information about a specific movie using its unique URI slug.
+// GetMovieBySlug godoc
+// @Summary      Get movie detail and schedules by slug
+// @Description  Retrieve movie detail and schedules using slug path parameter with optional date and location query parameters.
 // @Tags         Movies
 // @Accept       json
 // @Produce      json
-// @Param        slug  path      string  true  "Movie Slug"
-// @Success      200   {object}  dto.MovieDetailWrappedResponse
-// @Failure      400   {object}  dto.ErrorResponse
-// @Failure      404   {object}  dto.ErrorResponse
-// @Failure      500   {object}  dto.ErrorResponse
+// @Param        slug      path      string  true   "Movie Slug"
+// @Param        date      query     string  false  "Selected date in YYYY-MM-DD format" example(2026-06-09)
+// @Param        location  query     string  false  "Filter by location name" example(Jakarta)
+// @Success      200       {object}  dto.MovieHomeDetailWrappedResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure      500       {object}  map[string]interface{}
 // @Router       /movies/{slug} [get]
-func (c *MovieHomeController) GetBySlug(ctx *gin.Context) {
+func (c *MovieHomeController) GetMovieBySlug(ctx *gin.Context) {
 	slug := ctx.Param("slug")
+	selectedDate := ctx.Query("date")
+	location := ctx.DefaultQuery("location", "")
+
 	if slug == "" {
-		ctx.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Status:  "error",
-			Message: "Slug parameter is required",
-		})
+		response.Error(ctx, http.StatusBadRequest, "movie slug is required")
 		return
 	}
 
-	movie, err := c.movieHomeService.GetBySlug(ctx.Request.Context(), slug)
+	if selectedDate != "" {
+		if _, err := time.Parse("2006-01-02", selectedDate); err != nil {
+			response.Error(ctx, http.StatusBadRequest, "date format must be YYYY-MM-DD")
+			return
+		}
+	}
+
+	movie, err := c.movieHomeService.GetMovieBySlug(
+		ctx.Request.Context(),
+		slug,
+		selectedDate,
+		location,
+	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
-			ctx.JSON(http.StatusNotFound, dto.ErrorResponse{
-				Status:  "error",
-				Message: "Movie not found",
-			})
+			response.Error(ctx, http.StatusNotFound, "movie not found")
 			return
 		}
 
-		ctx.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to get movie",
-		})
+		response.Error(ctx, http.StatusInternalServerError, "failed to get movie")
 		return
 	}
 
-	// Map domain model -> new MovieDetailResponse DTO
-	movieDetail := dto.MovieDetailResponse{
-		ID:               movie.ID,
-		Title:            movie.Name,
-		ReleaseDate:      movie.ReleaseDate.Format("2006-01-02"),
-		DurationInMinute: movie.DurationInMinute,
-		DirectorName:     movie.DirectorName,
-		Synopsis:         movie.Synopsis,
-		ImagePoster:      movie.Image,
-		GenresCategories: movie.Categories,
-		Casts:            movie.Casts,
-	}
-
-	// Return wrapped response using string status fields
-	ctx.JSON(http.StatusOK, dto.MovieDetailWrappedResponse{
-		Status: "success",
-		Data:   movieDetail,
-	})
+	response.Success(
+		ctx,
+		http.StatusOK,
+		"movie retrieved successfully",
+		movie,
+	)
 }
