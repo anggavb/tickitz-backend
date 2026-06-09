@@ -375,27 +375,36 @@ func (r *MovieRepository) Delete(ctx context.Context, movieID int64) error {
 }
 
 func (r *MovieRepository) ensureCategoryIDs(ctx context.Context, tx pgx.Tx, categoryNames []string) ([]int64, error) {
-	nameSet := make(map[string]struct{}, len(categoryNames))
-	uniqueNames := make([]string, 0, len(categoryNames))
+	// Step 1: Split comma-separated values, trim, and deduplicate
+	nameSet := make(map[string]struct{}, len(categoryNames)*2)
+	uniqueNames := make([]string, 0, len(categoryNames)*2)
 
 	for _, raw := range categoryNames {
-		name := strings.TrimSpace(raw)
-		if name == "" {
-			continue
+		// Split by comma
+		parts := strings.Split(raw, ",")
+		for _, part := range parts {
+			// Trim whitespace
+			name := strings.TrimSpace(part)
+			if name == "" {
+				continue
+			}
+			// Deduplicate using lowercase key
+			lowerName := strings.ToLower(name)
+			if _, exists := nameSet[lowerName]; exists {
+				continue
+			}
+			nameSet[lowerName] = struct{}{}
+			uniqueNames = append(uniqueNames, name)
 		}
-		if _, exists := nameSet[name]; exists {
-			continue
-		}
-		nameSet[name] = struct{}{}
-		uniqueNames = append(uniqueNames, name)
 	}
 
 	if len(uniqueNames) == 0 {
 		return nil, nil
 	}
 
-	existingIDs := make(map[string]int64)
-	rows, err := tx.Query(ctx, `SELECT id, name FROM categories WHERE name = ANY($1)`, uniqueNames)
+	// Step 2: Query existing categories using lowercase comparison
+	existingIDs := make(map[string]int64) // key is lowercase
+	rows, err := tx.Query(ctx, `SELECT id, name FROM categories`)
 	if err != nil {
 		return nil, err
 	}
@@ -407,21 +416,30 @@ func (r *MovieRepository) ensureCategoryIDs(ctx context.Context, tx pgx.Tx, cate
 		if err := rows.Scan(&id, &name); err != nil {
 			return nil, err
 		}
-		existingIDs[name] = id
+		// Map lowercase name to ID
+		lowerName := strings.ToLower(name)
+		if _, exists := existingIDs[lowerName]; !exists {
+			existingIDs[lowerName] = id
+		}
 	}
 
+	// Step 3: Check/insert categories
 	categoryIDs := make([]int64, 0, len(uniqueNames))
 	for _, name := range uniqueNames {
-		if id, ok := existingIDs[name]; ok {
+		lowerName := strings.ToLower(name)
+		if id, ok := existingIDs[lowerName]; ok {
+			// Category exists, use its ID
 			categoryIDs = append(categoryIDs, id)
 			continue
 		}
 
+		// Category doesn't exist, insert it
 		var id int64
 		if err := tx.QueryRow(ctx, `INSERT INTO categories (name) VALUES ($1) RETURNING id`, name).Scan(&id); err != nil {
 			return nil, err
 		}
 		categoryIDs = append(categoryIDs, id)
+		existingIDs[lowerName] = id
 	}
 
 	return categoryIDs, nil
@@ -444,27 +462,36 @@ func (r *MovieRepository) setMovieCategoryLinks(ctx context.Context, tx pgx.Tx, 
 }
 
 func (r *MovieRepository) ensureCastIDs(ctx context.Context, tx pgx.Tx, castNames []string) ([]int64, error) {
-	nameSet := make(map[string]struct{}, len(castNames))
-	uniqueNames := make([]string, 0, len(castNames))
+	// Step 1: Split comma-separated values, trim, and deduplicate
+	nameSet := make(map[string]struct{}, len(castNames)*2)
+	uniqueNames := make([]string, 0, len(castNames)*2)
 
 	for _, raw := range castNames {
-		name := strings.TrimSpace(raw)
-		if name == "" {
-			continue
+		// Split by comma
+		parts := strings.Split(raw, ",")
+		for _, part := range parts {
+			// Trim whitespace
+			name := strings.TrimSpace(part)
+			if name == "" {
+				continue
+			}
+			// Deduplicate using lowercase key
+			lowerName := strings.ToLower(name)
+			if _, exists := nameSet[lowerName]; exists {
+				continue
+			}
+			nameSet[lowerName] = struct{}{}
+			uniqueNames = append(uniqueNames, name)
 		}
-		if _, exists := nameSet[name]; exists {
-			continue
-		}
-		nameSet[name] = struct{}{}
-		uniqueNames = append(uniqueNames, name)
 	}
 
 	if len(uniqueNames) == 0 {
 		return nil, nil
 	}
 
-	existingIDs := make(map[string]int64)
-	rows, err := tx.Query(ctx, `SELECT id, name FROM casts WHERE name = ANY($1)`, uniqueNames)
+	// Step 2: Query existing casts using lowercase comparison
+	existingIDs := make(map[string]int64) // key is lowercase
+	rows, err := tx.Query(ctx, `SELECT id, name FROM casts`)
 	if err != nil {
 		return nil, err
 	}
@@ -476,21 +503,30 @@ func (r *MovieRepository) ensureCastIDs(ctx context.Context, tx pgx.Tx, castName
 		if err := rows.Scan(&id, &name); err != nil {
 			return nil, err
 		}
-		existingIDs[name] = id
+		// Map lowercase name to ID
+		lowerName := strings.ToLower(name)
+		if _, exists := existingIDs[lowerName]; !exists {
+			existingIDs[lowerName] = id
+		}
 	}
 
+	// Step 3: Check/insert casts
 	castIDs := make([]int64, 0, len(uniqueNames))
 	for _, name := range uniqueNames {
-		if id, ok := existingIDs[name]; ok {
+		lowerName := strings.ToLower(name)
+		if id, ok := existingIDs[lowerName]; ok {
+			// Cast exists, use its ID
 			castIDs = append(castIDs, id)
 			continue
 		}
 
+		// Cast doesn't exist, insert it
 		var id int64
 		if err := tx.QueryRow(ctx, `INSERT INTO casts (name) VALUES ($1) RETURNING id`, name).Scan(&id); err != nil {
 			return nil, err
 		}
 		castIDs = append(castIDs, id)
+		existingIDs[lowerName] = id
 	}
 
 	return castIDs, nil
@@ -510,4 +546,42 @@ func (r *MovieRepository) setMovieCastLinks(ctx context.Context, tx pgx.Tx, movi
 		}
 	}
 	return nil
+}
+
+func (r *MovieRepository) FindAllCategories(ctx context.Context) ([]string, error) {
+	rows, err := r.db.Query(ctx, `SELECT name FROM categories ORDER BY name ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	categories := make([]string, 0)
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		categories = append(categories, name)
+	}
+
+	return categories, rows.Err()
+}
+
+func (r *MovieRepository) FindAllCasts(ctx context.Context) ([]string, error) {
+	rows, err := r.db.Query(ctx, `SELECT name FROM casts ORDER BY name ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	casts := make([]string, 0)
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		casts = append(casts, name)
+	}
+
+	return casts, rows.Err()
 }

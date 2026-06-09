@@ -134,6 +134,38 @@ func (c *MovieController) Create(ctx *gin.Context) {
 	})
 }
 
+func (c *MovieController) ListCategories(ctx *gin.Context) {
+	categories, err := c.movieService.ListCategories(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to fetch categories",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    categories,
+	})
+}
+
+func (c *MovieController) ListCasts(ctx *gin.Context) {
+	casts, err := c.movieService.ListCasts(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to fetch casts",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    casts,
+	})
+}
+
 func (c *MovieController) Update(ctx *gin.Context) {
 	movieID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil || movieID <= 0 {

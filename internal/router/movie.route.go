@@ -9,7 +9,8 @@ import (
 )
 
 func RegisterMovieRouter(router *gin.Engine, db *pgxpool.Pool) {
-	movieRouter := router.Group("/admin/movies")
+	adminRouter := router.Group("/admin")
+	movieRouter := adminRouter.Group("/movies")
 	movieRepo := repository.NewMovieRepository(db)
 	movieService := service.NewMovieService(movieRepo)
 	movieController := controller.NewMovieController(movieService)
@@ -19,4 +20,7 @@ func RegisterMovieRouter(router *gin.Engine, db *pgxpool.Pool) {
 	movieRouter.POST("", movieController.Create)
 	movieRouter.PUT(":id", movieController.Update)
 	movieRouter.DELETE(":id", movieController.Delete)
+
+	adminRouter.GET("/categories", movieController.ListCategories)
+	adminRouter.GET("/casts", movieController.ListCasts)
 }
