@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"database/sql"
 	"errors"
 	"net/http"
 	"time"
@@ -60,7 +59,7 @@ func (c *MovieHomeController) GetMovieBySlug(ctx *gin.Context) {
 		location,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			response.Error(ctx, http.StatusNotFound, "movie not found")
 			return
 		}
