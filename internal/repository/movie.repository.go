@@ -81,16 +81,26 @@ ORDER BY m.created_at DESC
 	return movies, rows.Err()
 }
 
-func (r *MovieRepository) CountAll(ctx context.Context) (int64, error) {
-	sql := `SELECT COUNT(*) FROM movies`
+func (r *MovieRepository) CountAll(ctx context.Context, releaseMonth string) (int64, error) {
+	var sql string
+	var row pgx.Row
+
+	if releaseMonth == "" {
+		sql = `SELECT COUNT(*) FROM movies`
+		row = r.db.QueryRow(ctx, sql)
+	} else {
+		sql = `SELECT COUNT(*) FROM movies WHERE to_char(release_date, 'YYYY-MM') = $1`
+		row = r.db.QueryRow(ctx, sql, releaseMonth)
+	}
+
 	var total int64
-	if err := r.db.QueryRow(ctx, sql).Scan(&total); err != nil {
+	if err := row.Scan(&total); err != nil {
 		return 0, err
 	}
 	return total, nil
 }
 
-func (r *MovieRepository) FindAllPaginated(ctx context.Context, limit int, offset int) ([]model.Movie, error) {
+func (r *MovieRepository) FindAllPaginated(ctx context.Context, limit int, offset int, releaseMonth string) ([]model.Movie, error) {
 	sql := `
 SELECT
 	m.id,
@@ -110,12 +120,26 @@ LEFT JOIN movie_categories mc ON mc.movie_id = m.id
 LEFT JOIN categories c ON c.id = mc.category_id
 LEFT JOIN movie_casts mc2 ON mc2.movie_id = m.id
 LEFT JOIN casts cs ON cs.id = mc2.cast_id
+`
+
+	if releaseMonth != "" {
+		sql += `WHERE to_char(m.release_date, 'YYYY-MM') = $3`
+	}
+
+	sql += `
 GROUP BY m.id
 ORDER BY m.created_at DESC
 LIMIT $1 OFFSET $2
 `
 
-	rows, err := r.db.Query(ctx, sql, limit, offset)
+	var rows pgx.Rows
+	var err error
+	if releaseMonth != "" {
+		rows, err = r.db.Query(ctx, sql, limit, offset, releaseMonth)
+	} else {
+		rows, err = r.db.Query(ctx, sql, limit, offset)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -152,6 +176,31 @@ LIMIT $1 OFFSET $2
 	}
 
 	return movies, rows.Err()
+}
+
+func (r *MovieRepository) FindReleaseMonths(ctx context.Context) ([]string, error) {
+	sql := `
+SELECT DISTINCT to_char(release_date, 'YYYY-MM')
+FROM movies
+ORDER BY 1 DESC
+`
+
+	rows, err := r.db.Query(ctx, sql)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	months := make([]string, 0)
+	for rows.Next() {
+		var month string
+		if err := rows.Scan(&month); err != nil {
+			return nil, err
+		}
+		months = append(months, month)
+	}
+
+	return months, rows.Err()
 }
 
 func (r *MovieRepository) FindByID(ctx context.Context, movieID int64) (model.Movie, error) {
@@ -350,6 +399,31 @@ func (r *MovieRepository) Delete(ctx context.Context, movieID int64) error {
 	defer func() {
 		_ = tx.Rollback(ctx)
 	}()
+
+	// Delete order_details that reference movie_cinemas for this movie
+	if _, err := tx.Exec(ctx, `
+		DELETE FROM order_details 
+		WHERE movie_cinema_id IN (
+			SELECT id FROM movie_cinemas WHERE movie_id = $1
+		)
+	`, movieID); err != nil {
+		return err
+	}
+
+	// Delete orders that reference movie_cinemas for this movie
+	if _, err := tx.Exec(ctx, `
+		DELETE FROM orders 
+		WHERE movie_cinema_id IN (
+			SELECT id FROM movie_cinemas WHERE movie_id = $1
+		)
+	`, movieID); err != nil {
+		return err
+	}
+
+	// Delete movie_cinemas for this movie
+	if _, err := tx.Exec(ctx, `DELETE FROM movie_cinemas WHERE movie_id = $1`, movieID); err != nil {
+		return err
+	}
 
 	if err := r.deleteMovieCategories(ctx, tx, movieID); err != nil {
 		return err

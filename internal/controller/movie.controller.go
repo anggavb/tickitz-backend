@@ -39,6 +39,7 @@ func NewMovieController(movieService *service.MovieService) *MovieController {
 func (c *MovieController) List(ctx *gin.Context) {
 	page := 1
 	limit := 5
+	releaseMonth := ctx.Query("month")
 
 	if pageParam := ctx.Query("page"); pageParam != "" {
 		if p, err := strconv.Atoi(pageParam); err == nil && p > 0 {
@@ -52,7 +53,7 @@ func (c *MovieController) List(ctx *gin.Context) {
 		}
 	}
 
-	movies, pagination, err := c.movieService.List(ctx.Request.Context(), page, limit)
+	movies, pagination, err := c.movieService.List(ctx.Request.Context(), page, limit, releaseMonth)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -131,6 +132,22 @@ func (c *MovieController) Create(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"data":    buildMovieResponse(movie),
+	})
+}
+
+func (c *MovieController) ListReleaseMonths(ctx *gin.Context) {
+	months, err := c.movieService.ListReleaseMonths(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to fetch release months",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    months,
 	})
 }
 
