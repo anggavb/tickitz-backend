@@ -7,41 +7,34 @@ INSERT INTO showtimes (id, showtime) VALUES
   (6, '19:30:00'),
   (7, '10:00:00'),
   (8, '14:30:00'),
-  (9, '19:30:00'),
-  (10, '10:00:00'),
-  (11, '14:30:00'),
-  (12, '19:30:00'),
-  (13, '10:00:00'),
-  (14, '14:30:00'),
-  (15, '19:30:00'),
-  (16, '10:00:00'),
-  (17, '14:30:00'),
-  (18, '19:30:00'),
-  (19, '10:00:00'),
-  (20, '14:30:00'),
-  (21, '19:30:00'),
-  (22, '10:00:00'),
-  (23, '14:30:00'),
-  (24, '19:30:00')
+  (9, '19:30:00')
 ON CONFLICT (id) DO UPDATE SET
   showtime = EXCLUDED.showtime;
 
 SELECT setval(pg_get_serial_sequence('showtimes', 'id'), COALESCE((SELECT MAX(id) FROM showtimes), 1), true);
 
 
-INSERT INTO movie_cinemas (id, movie_id, cinema_id, start_date, end_date, showtime_id, price) VALUES
-  (1, 1, 1, '2026-06-10 00:00:00', '2026-06-16 23:59:59', 1, 10000),
-  (2, 2, 1, '2026-06-10 00:00:00', '2026-06-16 23:59:59', 2, 15000),
-  (3, 3, 1, '2026-06-10 00:00:00', '2026-06-16 23:59:59', 3, 20000),
-  (4, 4, 2, '2026-06-10 00:00:00', '2026-06-16 23:59:59', 4, 10000),
-  (5, 5, 2, '2026-06-10 00:00:00', '2026-06-16 23:59:59', 5, 15000),
-  (6, 6, 3, '2026-06-10 00:00:00', '2026-06-16 23:59:59', 6, 20000),
-  (7, 1, 3, '2026-06-10 00:00:00', '2026-06-16 23:59:59', 7, 10000),
-  (8, 2, 3, '2026-06-10 00:00:00', '2026-06-16 23:59:59', 8, 15000)
-ON CONFLICT (id) DO UPDATE SET
-  movie_id = EXCLUDED.movie_id,
-  cinema_id = EXCLUDED.cinema_id,
-  start_date = EXCLUDED.start_date,
-  end_date = EXCLUDED.end_date;
+INSERT INTO movie_cinemas (movie_id, cinema_id, show_date, showtime_id, price)
+SELECT
+  schedule_templates.movie_id,
+  schedule_templates.cinema_id,
+  generated_date::date AS show_date,
+  schedule_templates.showtime_id,
+  schedule_templates.price
+FROM (
+  VALUES
+    (1, 1, '2026-06-10'::date, '2026-06-16'::date, 1, 50000),
+    (2, 1, '2026-06-10'::date, '2026-06-16'::date, 2, 65000),
+    (3, 1, '2026-06-10'::date, '2026-06-16'::date, 3, 80000),
+    (4, 2, '2026-06-10'::date, '2026-06-16'::date, 4, 50000),
+    (5, 2, '2026-06-10'::date, '2026-06-16'::date, 5, 65000),
+    (6, 3, '2026-06-10'::date, '2026-06-16'::date, 6, 80000),
+    (1, 3, '2026-06-10'::date, '2026-06-16'::date, 7, 50000),
+    (2, 3, '2026-06-10'::date, '2026-06-16'::date, 8, 65000)
+) AS schedule_templates(movie_id, cinema_id, start_date, end_date, showtime_id, price)
+CROSS JOIN LATERAL generate_series(schedule_templates.start_date, schedule_templates.end_date, interval '1 day') AS generated_date
+ON CONFLICT (movie_id, cinema_id, show_date, showtime_id) DO UPDATE SET
+  price = EXCLUDED.price,
+  updated_at = now();
 
 SELECT setval(pg_get_serial_sequence('movie_cinemas', 'id'), COALESCE((SELECT MAX(id) FROM movie_cinemas), 1), true);
