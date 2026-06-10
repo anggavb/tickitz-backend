@@ -22,4 +22,6 @@ func HomeMovieRouter(router *gin.Engine, db *pgxpool.Pool) {
 	movieGroup.GET("/:slug/schedules", movieHomeController.GetMovieSchedulesBySlug)
 	movieGroup.GET("/showtimes", movieHomeController.GetShowtimes)
 	movieGroup.GET("/locations", movieHomeController.GetLocations)
+	movieGroup.GET("/upcoming", movieHomeController.GetUpcomingMovies)
+
 }

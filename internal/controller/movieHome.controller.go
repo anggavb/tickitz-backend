@@ -221,3 +221,40 @@ func (c *MovieHomeController) GetMoviesWithFilter(ctx *gin.Context) {
 		data,
 	)
 }
+
+// GetUpcomingMovies godoc
+//
+//	@Summary		Get upcoming movies
+//	@Description	Get list of upcoming movies (release date greater than current date).
+//	@Tags			Movies
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	dto.SuccessResponse
+//	@Failure		500	{object}	dto.ErrorResponse
+//	@Router			/movies/upcoming [get]
+func (c *MovieHomeController) GetUpcomingMovies(ctx *gin.Context) {
+
+	data, err := c.movieHomeService.GetUpcomingMovies(
+		ctx.Request.Context(),
+	)
+	if err != nil {
+		log.Printf(
+			"[MovieHomeController][GetUpcomingMovies] service error: %v",
+			err,
+		)
+
+		response.Error(
+			ctx,
+			http.StatusInternalServerError,
+			err.Error(),
+		)
+		return
+	}
+
+	response.Success(
+		ctx,
+		http.StatusOK,
+		"success to get upcoming movies",
+		data,
+	)
+}
