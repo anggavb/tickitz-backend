@@ -24,3 +24,7 @@ type LoginResponse struct {
 	Token string `json:"token"`
 	Photo string `json:"photo"`
 }
+
+type ChangePasswordRequest struct {
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}

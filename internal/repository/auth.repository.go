@@ -147,3 +147,11 @@ func (r *AuthRepository) GetUserPassword(ctx context.Context, email string) (mod
 
 	return user, nil
 }
+
+func (r *AuthRepository) UpdatePassword(ctx context.Context, newPassword string, id int) error {
+	sql := `UPDATE users SET password = $1 WHERE id = $2`
+	if _, err := r.db.Exec(ctx, sql, newPassword, id); err != nil {
+		return err
+	}
+	return nil
+}
