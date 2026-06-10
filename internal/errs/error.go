@@ -16,4 +16,6 @@ var (
 	ErrPasswordTooShort = errors.New("password must be at least 8 characters")
 
 	ErrNothingToUpdate = errors.New("nothing no update")
+
+	ErrGetMovies = errors.New("failed to get movies")
 )

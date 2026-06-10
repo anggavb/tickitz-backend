@@ -5,7 +5,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-
 	_ "github.com/tickitz-backend/docs"
 	"github.com/tickitz-backend/internal/middleware"
 )
@@ -20,4 +19,5 @@ func InitRouter(router *gin.Engine, db *pgxpool.Pool) {
 	RegisterMovieRouter(router, db)
 	RegisterProfileRouter(router, db)
 	HomeMovieRouter(router, db)
+	RegisterSeatRouter(router, db)
 }

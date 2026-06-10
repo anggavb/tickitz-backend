@@ -9,11 +9,16 @@ import (
 )
 
 func HomeMovieRouter(router *gin.Engine, db *pgxpool.Pool) {
-	movie := router.Group("/movies")
+	movieGroup := router.Group("/movies")
 
-	movieHomeRepo := repository.NewMovieHomeRepository(db)
-	movieHomeService := service.NewMovieHomeService(movieHomeRepo)
+	movieHomeRepository := repository.NewMovieHomeRepository(db)
+	movieScheduleRepository := repository.NewMovieScheduleRepository(db)
+
+	movieHomeService := service.NewMovieHomeService(movieHomeRepository, movieScheduleRepository)
 	movieHomeController := controller.NewMovieHomeController(movieHomeService)
 
-	movie.GET("/:slug", movieHomeController.GetBySlug)
+	movieGroup.GET("/:slug", movieHomeController.GetMovieBySlug)
+	movieGroup.GET("/:slug/schedules", movieHomeController.GetMovieSchedulesBySlug)
+	movieGroup.GET("/showtimes", movieHomeController.GetShowtimes)
+	movieGroup.GET("/locations", movieHomeController.GetLocations)
 }
