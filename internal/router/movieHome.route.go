@@ -19,6 +19,6 @@ func HomeMovieRouter(router *gin.Engine, db *pgxpool.Pool) {
 
 	movieGroup.GET("/:slug", movieHomeController.GetMovieBySlug)
 	movieGroup.GET("/:slug/schedules", movieHomeController.GetMovieSchedulesBySlug)
-	movieGroup.GET("/times", movieHomeController.GetShowtimes)
+	movieGroup.GET("/showtimes", movieHomeController.GetShowtimes)
 	movieGroup.GET("/locations", movieHomeController.GetLocations)
 }

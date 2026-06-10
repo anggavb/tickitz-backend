@@ -123,7 +123,7 @@ func (c *MovieHomeController) GetMovieSchedulesBySlug(ctx *gin.Context) {
 // @Produce      json
 // @Success      200  {object}  map[string]interface{}
 // @Failure      500  {object}  map[string]interface{}
-// @Router       /movies/schedules/locations [get]
+// @Router       /movies/locations [get]
 func (c *MovieHomeController) GetLocations(ctx *gin.Context) {
 	locations, err := c.movieHomeService.GetLocations(ctx.Request.Context())
 	if err != nil {
@@ -147,7 +147,7 @@ func (c *MovieHomeController) GetLocations(ctx *gin.Context) {
 // @Produce      json
 // @Success      200  {object}  map[string]interface{}
 // @Failure      500  {object}  map[string]interface{}
-// @Router       /movies/schedules/showtimes [get]
+// @Router       /movies/showtimes [get]
 func (c *MovieHomeController) GetShowtimes(ctx *gin.Context) {
 	showtimes, err := c.movieHomeService.GetShowtimes(ctx.Request.Context())
 	if err != nil {
