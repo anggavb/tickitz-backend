@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/tickitz-backend/internal/dto"
+	"github.com/tickitz-backend/internal/response"
 	"github.com/tickitz-backend/internal/service"
 )
 
@@ -126,11 +127,11 @@ func (c *MovieHomeController) GetMovieSchedulesBySlug(ctx *gin.Context) {
 func (c *MovieHomeController) GetLocations(ctx *gin.Context) {
 	locations, err := c.movieHomeService.GetLocations(ctx.Request.Context())
 	if err != nil {
-		dto.Error(ctx, http.StatusInternalServerError, "failed to get movie locations")
+		response.Error(ctx, http.StatusInternalServerError, "failed to get movie locations")
 		return
 	}
 
-	dto.Success(
+	response.Success(
 		ctx,
 		http.StatusOK,
 		"movie locations retrieved successfully",
@@ -150,11 +151,11 @@ func (c *MovieHomeController) GetLocations(ctx *gin.Context) {
 func (c *MovieHomeController) GetShowtimes(ctx *gin.Context) {
 	showtimes, err := c.movieHomeService.GetShowtimes(ctx.Request.Context())
 	if err != nil {
-		dto.Error(ctx, http.StatusInternalServerError, "failed to get movie showtimes")
+		response.Error(ctx, http.StatusInternalServerError, "failed to get movie showtimes")
 		return
 	}
 
-	dto.Success(
+	response.Success(
 		ctx,
 		http.StatusOK,
 		"movie showtimes retrieved successfully",

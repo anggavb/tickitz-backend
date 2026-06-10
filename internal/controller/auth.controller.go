@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tickitz-backend/internal/dto"
 	"github.com/tickitz-backend/internal/errs"
+	"github.com/tickitz-backend/internal/response"
 	"github.com/tickitz-backend/internal/service"
 )
 
@@ -29,7 +30,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 
 		if strings.Contains(err.Error(), "Email") &&
 			strings.Contains(err.Error(), "email") {
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusBadRequest,
 				"Email format is invalid",
@@ -39,7 +40,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 
 		if strings.Contains(err.Error(), "Password") &&
 			strings.Contains(err.Error(), "min") {
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusBadRequest,
 				"Password must be at least 8 characters",
@@ -50,7 +51,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		if strings.Contains(err.Error(), "IsAgree") &&
 			(strings.Contains(err.Error(), "eq") ||
 				strings.Contains(err.Error(), "required")) {
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusBadRequest,
 				"You must agree to the terms and conditions",
@@ -58,7 +59,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 			return
 		}
 
-		dto.Error(
+		response.Error(
 			ctx,
 			http.StatusBadRequest,
 			"Invalid request",
@@ -69,7 +70,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 	if err := c.authService.Register(ctx.Request.Context(), user); err != nil {
 
 		if errors.Is(err, errs.ErrExistingEmail) {
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusConflict,
 				"Email already registered",
@@ -88,7 +89,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 				otpReq,
 			); otpErr != nil {
 
-				dto.Error(
+				response.Error(
 					ctx,
 					http.StatusInternalServerError,
 					"Failed to send new OTP",
@@ -96,7 +97,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 				return
 			}
 
-			dto.Success(
+			response.Success(
 				ctx,
 				http.StatusOK,
 				"Your email has been registered but not active, check your email to activate!",
@@ -107,7 +108,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 			return
 		}
 
-		dto.Error(
+		response.Error(
 			ctx,
 			http.StatusInternalServerError,
 			"Internal server error",
@@ -115,7 +116,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		return
 	}
 
-	dto.Success(
+	response.Success(
 		ctx,
 		http.StatusCreated,
 		"Registration successful. Please check your email to activate your account.",
@@ -132,7 +133,7 @@ func (c *AuthController) Activate(ctx *gin.Context) {
 
 		if strings.Contains(err.Error(), "Email") &&
 			strings.Contains(err.Error(), "email") {
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusBadRequest,
 				"Email format is invalid",
@@ -142,7 +143,7 @@ func (c *AuthController) Activate(ctx *gin.Context) {
 
 		if strings.Contains(err.Error(), "OTP") &&
 			strings.Contains(err.Error(), "required") {
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusBadRequest,
 				"OTP is required",
@@ -150,7 +151,7 @@ func (c *AuthController) Activate(ctx *gin.Context) {
 			return
 		}
 
-		dto.Error(
+		response.Error(
 			ctx,
 			http.StatusBadRequest,
 			"Invalid request",
@@ -166,35 +167,35 @@ func (c *AuthController) Activate(ctx *gin.Context) {
 		switch {
 
 		case errors.Is(err, errs.ErrAccountActivated):
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusBadRequest,
 				err.Error(),
 			)
 
 		case errors.Is(err, errs.ErrTokenExpired):
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusBadRequest,
 				err.Error(),
 			)
 
 		case errors.Is(err, errs.ErrInvalidOTP):
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusBadRequest,
 				err.Error(),
 			)
 
 		case errors.Is(err, errs.ErrInternalServer):
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusInternalServerError,
 				"Internal server error",
 			)
 
 		default:
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusBadRequest,
 				err.Error(),
@@ -204,7 +205,7 @@ func (c *AuthController) Activate(ctx *gin.Context) {
 		return
 	}
 
-	dto.Success(
+	response.Success(
 		ctx,
 		http.StatusOK,
 		"Account activated successfully",
@@ -221,7 +222,7 @@ func (c *AuthController) GetNewOTP(ctx *gin.Context) {
 
 		if strings.Contains(err.Error(), "Email") &&
 			strings.Contains(err.Error(), "email") {
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusBadRequest,
 				"Email format is invalid",
@@ -229,7 +230,7 @@ func (c *AuthController) GetNewOTP(ctx *gin.Context) {
 			return
 		}
 
-		dto.Error(
+		response.Error(
 			ctx,
 			http.StatusBadRequest,
 			"Invalid request",
@@ -243,7 +244,7 @@ func (c *AuthController) GetNewOTP(ctx *gin.Context) {
 	); err != nil {
 
 		if errors.Is(err, errs.ErrAccountActivated) {
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusConflict,
 				"Account already activated",
@@ -251,7 +252,7 @@ func (c *AuthController) GetNewOTP(ctx *gin.Context) {
 			return
 		}
 
-		dto.Error(
+		response.Error(
 			ctx,
 			http.StatusInternalServerError,
 			"Internal server error",
@@ -259,7 +260,7 @@ func (c *AuthController) GetNewOTP(ctx *gin.Context) {
 		return
 	}
 
-	dto.Success(
+	response.Success(
 		ctx,
 		http.StatusOK,
 		"New OTP has been sent successfully",
@@ -276,7 +277,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 
 		if strings.Contains(err.Error(), "Email") &&
 			strings.Contains(err.Error(), "email") {
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusBadRequest,
 				"Email format is invalid",
@@ -286,7 +287,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 
 		if strings.Contains(err.Error(), "Password") &&
 			strings.Contains(err.Error(), "min") {
-			dto.Error(
+			response.Error(
 				ctx,
 				http.StatusBadRequest,
 				"Password must be at least 8 characters",
@@ -294,7 +295,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 			return
 		}
 
-		dto.Error(
+		response.Error(
 			ctx,
 			http.StatusBadRequest,
 			"Invalid request",
@@ -304,10 +305,10 @@ func (c *AuthController) Login(ctx *gin.Context) {
 
 	data, err := c.authService.Login(ctx.Request.Context(), user.Email, user.Password)
 	if err != nil {
-		dto.Error(ctx, http.StatusBadRequest, err.Error())
+		response.Error(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
-	dto.Success(
+	response.Success(
 		ctx,
 		http.StatusOK,
 		"Login success",
@@ -321,11 +322,11 @@ func (c *AuthController) ChangeUserPassword(ctx *gin.Context) {
 		log.Printf("[ChangeUserPassword] BindJSON error: %v\n", err)
 
 		if strings.Contains(err.Error(), "NewPassword") {
-			dto.Error(ctx, http.StatusBadRequest, err.Error())
+			response.Error(ctx, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		dto.Error(ctx, http.StatusBadRequest, "invalid request")
+		response.Error(ctx, http.StatusBadRequest, "invalid request")
 		return
 	}
 
@@ -339,7 +340,7 @@ func (c *AuthController) ChangeUserPassword(ctx *gin.Context) {
 	); err != nil {
 		log.Printf("[ChangeUserPassword] Service error: %v\n", err)
 
-		dto.Error(
+		response.Error(
 			ctx,
 			http.StatusInternalServerError,
 			"failed to change password",
@@ -347,5 +348,5 @@ func (c *AuthController) ChangeUserPassword(ctx *gin.Context) {
 		return
 	}
 
-	dto.Success(ctx, http.StatusOK, "password updated", nil)
+	response.Success(ctx, http.StatusOK, "password updated", nil)
 }
