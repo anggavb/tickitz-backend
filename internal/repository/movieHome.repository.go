@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/tickitz-backend/internal/model"
+	"github.com/tickitz-backend/internal/dto"
 )
 
 type MovieHomeRepository struct {
@@ -16,7 +16,7 @@ func NewMovieHomeRepository(db *pgxpool.Pool) *MovieHomeRepository {
 	return &MovieHomeRepository{db: db}
 }
 
-func (r *MovieHomeRepository) FindBySlug(ctx context.Context, slug string) (model.MovieDetails, error) {
+func (r *MovieHomeRepository) FindBySlug(ctx context.Context, slug string) (dto.MovieDetails, error) {
 	query := `
 		SELECT
 			m.id,
@@ -40,7 +40,7 @@ func (r *MovieHomeRepository) FindBySlug(ctx context.Context, slug string) (mode
 		GROUP BY m.id;
 	`
 
-	var movie model.MovieDetails
+	var movie dto.MovieDetails
 	var genres []string
 	var casts []string
 	var updatedAt *time.Time
@@ -60,7 +60,7 @@ func (r *MovieHomeRepository) FindBySlug(ctx context.Context, slug string) (mode
 		&updatedAt,
 	)
 	if err != nil {
-		return model.MovieDetails{}, err
+		return dto.MovieDetails{}, err
 	}
 
 	movie.Categories = genres

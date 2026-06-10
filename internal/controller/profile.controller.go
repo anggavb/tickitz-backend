@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/tickitz-backend/internal/dto"
-	"github.com/tickitz-backend/internal/response"
 	"github.com/tickitz-backend/internal/service"
 )
 
@@ -21,8 +20,7 @@ func NewProfileController(profileService *service.ProfileService) *ProfileContro
 }
 
 func (c *ProfileController) GetProfileById(ctx *gin.Context) {
-	// TODO: ambil dari claims
-	userID := 2 // dummy
+	userID := 2
 
 	profile, err := c.ProfileService.GetUserProfile(
 		ctx.Request.Context(),
@@ -31,7 +29,7 @@ func (c *ProfileController) GetProfileById(ctx *gin.Context) {
 	if err != nil {
 		log.Printf("[GetProfileById] GetUserProfile error: %v\n", err)
 
-		response.Error(
+		dto.Error(
 			ctx,
 			http.StatusInternalServerError,
 			"failed to get profile",
@@ -39,7 +37,7 @@ func (c *ProfileController) GetProfileById(ctx *gin.Context) {
 		return
 	}
 
-	response.Success(
+	dto.Success(
 		ctx,
 		http.StatusOK,
 		"success to get profile",
@@ -56,7 +54,7 @@ func (c *ProfileController) UpdateUserProfile(ctx *gin.Context) {
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Printf("[UpdateUserProfile] BindJSON error: %v\n", err)
 
-		response.Error(ctx, http.StatusBadRequest, err.Error())
+		dto.Error(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -67,7 +65,7 @@ func (c *ProfileController) UpdateUserProfile(ctx *gin.Context) {
 	); err != nil {
 		log.Printf("[UpdateUserProfile] Service error: %v\n", err)
 
-		response.Error(
+		dto.Error(
 			ctx,
 			http.StatusInternalServerError,
 			"failed to update profile",
@@ -75,5 +73,5 @@ func (c *ProfileController) UpdateUserProfile(ctx *gin.Context) {
 		return
 	}
 
-	response.Success(ctx, http.StatusOK, "profile updated", nil)
+	dto.Success(ctx, http.StatusOK, "profile updated", nil)
 }

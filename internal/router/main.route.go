@@ -5,8 +5,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-
-	// _ "github.com/tickitz-backend/docs"
+	_ "github.com/tickitz-backend/docs"
 	"github.com/tickitz-backend/internal/middleware"
 )
 
