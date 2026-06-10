@@ -16,6 +16,7 @@ func RegisterMovieRouter(router *gin.Engine, db *pgxpool.Pool) {
 	movieController := controller.NewMovieController(movieService)
 
 	movieRouter.GET("", movieController.List)
+	movieRouter.GET("months", movieController.ListReleaseMonths)
 	movieRouter.GET(":id", movieController.GetByID)
 	movieRouter.POST("", movieController.Create)
 	movieRouter.PATCH(":id", movieController.Update)
