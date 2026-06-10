@@ -30,6 +30,7 @@ func (s *ProfileService) GetUserProfile(ctx context.Context, id int) (dto.UserPr
 		LastName:    profile.LastName,
 		Phone:       profile.Phone,
 		Photo:       profile.Photo,
+		Point:       profile.Point,
 		LoyaltyTier: profile.LoyaltyTier,
 	}, nil
 }

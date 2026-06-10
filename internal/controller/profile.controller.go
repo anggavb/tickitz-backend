@@ -31,7 +31,7 @@ func NewProfileController(profileService *service.ProfileService) *ProfileContro
 // @Router /profile [get]
 func (c *ProfileController) GetProfileById(ctx *gin.Context) {
 	// TODO: ambil dari claims
-	userID := 2 // dummy
+	var userID int // dummy
 
 	profile, err := c.ProfileService.GetUserProfile(
 		ctx.Request.Context(),
