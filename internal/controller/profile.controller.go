@@ -29,7 +29,13 @@ func (c *ProfileController) GetProfileById(ctx *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("[GetProfileById] GetUserProfile error: %v\n", err)
-		response.Error(ctx, http.StatusInternalServerError, "failed to get profile")
+
+		response.Error(
+			ctx,
+			http.StatusInternalServerError,
+			"failed to get profile",
+		)
+		return
 	}
 
 	response.Success(
