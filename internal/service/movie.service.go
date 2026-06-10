@@ -118,6 +118,14 @@ func (s *MovieService) Delete(ctx context.Context, movieID int64) error {
 	return s.movieRepo.Delete(ctx, movieID)
 }
 
+func (s *MovieService) ListCategories(ctx context.Context) ([]string, error) {
+	return s.movieRepo.FindAllCategories(ctx)
+}
+
+func (s *MovieService) ListCasts(ctx context.Context) ([]string, error) {
+	return s.movieRepo.FindAllCasts(ctx)
+}
+
 func generateSlug(name string) string {
 	name = strings.TrimSpace(strings.ToLower(name))
 	var builder strings.Builder
