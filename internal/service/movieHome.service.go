@@ -8,71 +8,29 @@ import (
 )
 
 type MovieHomeService struct {
-	movieHomeRepo *repository.MovieHomeRepository
+	movieHomeRepository     *repository.MovieHomeRepository
+	movieScheduleRepository *repository.MovieScheduleRepository
 }
 
-func NewMovieHomeService(movieHomeRepo *repository.MovieHomeRepository) *MovieHomeService {
+func NewMovieHomeService(
+	movieHomeRepository *repository.MovieHomeRepository,
+	movieScheduleRepository *repository.MovieScheduleRepository,
+) *MovieHomeService {
 	return &MovieHomeService{
-		movieHomeRepo: movieHomeRepo,
+		movieHomeRepository:     movieHomeRepository,
+		movieScheduleRepository: movieScheduleRepository,
 	}
 }
 
-func (s *MovieHomeService) GetMovieBySlug(
-	ctx context.Context,
-	slug string,
-	selectedDate string,
-	location string,
-) (dto.MovieHomeDetailResponse, error) {
-	movie, rows, err := s.movieHomeRepo.FindMovieBySlug(
-		ctx,
-		slug,
-		selectedDate,
-		location,
-	)
+func (s *MovieHomeService) GetMovieBySlug(ctx context.Context, slug string) (dto.MovieDetailResponse, error) {
+	movie, err := s.movieHomeRepository.FindBySlug(ctx, slug)
 	if err != nil {
-		return dto.MovieHomeDetailResponse{}, err
+		return dto.MovieDetailResponse{}, err
 	}
 
-	locationMap := make(map[string]map[string][]string)
-
-	for _, row := range rows {
-		if _, exists := locationMap[row.Location]; !exists {
-			locationMap[row.Location] = make(map[string][]string)
-		}
-
-		showtime := row.Showtime.Format("15:04")
-
-		locationMap[row.Location][row.CinemaName] = append(
-			locationMap[row.Location][row.CinemaName],
-			showtime,
-		)
-	}
-
-	schedules := make([]dto.LocationScheduleResponse, 0, len(locationMap))
-
-	for locationName, cinemasMap := range locationMap {
-		locationResponse := dto.LocationScheduleResponse{
-			Location: locationName,
-			Cinemas:  make([]dto.CinemaScheduleResponse, 0, len(cinemasMap)),
-		}
-
-		for cinemaName, showtimes := range cinemasMap {
-			cinemaResponse := dto.CinemaScheduleResponse{
-				CinemaName: cinemaName,
-				Showtimes:  showtimes,
-			}
-
-			locationResponse.Cinemas = append(
-				locationResponse.Cinemas,
-				cinemaResponse,
-			)
-		}
-
-		schedules = append(schedules, locationResponse)
-	}
-
-	return dto.MovieHomeDetailResponse{
+	return dto.MovieDetailResponse{
 		ID:               movie.ID,
+		Slug:             movie.Slug,
 		Title:            movie.Name,
 		ReleaseDate:      movie.ReleaseDate.Format("2006-01-02"),
 		DurationInMinute: movie.DurationInMinute,
@@ -81,6 +39,32 @@ func (s *MovieHomeService) GetMovieBySlug(
 		ImagePoster:      movie.Image,
 		GenresCategories: movie.Categories,
 		Casts:            movie.Casts,
-		Schedules:        schedules,
 	}, nil
+}
+
+func (s *MovieHomeService) GetMovieSchedulesBySlug(ctx context.Context, slug string) ([]dto.MovieScheduleResponse, error) {
+	_, err := s.movieHomeRepository.FindBySlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+
+	schedules, err := s.movieScheduleRepository.FindByMovieSlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+
+	responses := make([]dto.MovieScheduleResponse, 0, len(schedules))
+
+	for _, schedule := range schedules {
+		responses = append(responses, dto.MovieScheduleResponse{
+			Location:   schedule.Location,
+			CinemaName: schedule.CinemaName,
+			StartDate:  schedule.StartDate.Format("2006-01-02"),
+			EndDate:    schedule.EndDate.Format("2006-01-02"),
+			Showtime:   schedule.Showtime.Format("15:04"),
+			Price:      schedule.Price,
+		})
+	}
+
+	return responses, nil
 }

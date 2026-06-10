@@ -12,6 +12,7 @@ type MovieDetails struct {
 	Image            string     `json:"image_poster"`      // Maps to m.image / Image Poster
 	Categories       []string   `json:"genres_categories"` // Maps to categories / Genres/Categories
 	Casts            []string   `json:"casts"`             // Maps to casts / Casts
+	Slug             string     `json:"slug"`
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        *time.Time `json:"updated_at,omitempty"`
 }

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/tickitz-backend/internal/dto"
 	"github.com/tickitz-backend/internal/model"
 )
 
@@ -17,16 +16,12 @@ func NewMovieHomeRepository(db *pgxpool.Pool) *MovieHomeRepository {
 	return &MovieHomeRepository{db: db}
 }
 
-func (r *MovieHomeRepository) FindMovieBySlug(
-	ctx context.Context,
-	slug string,
-	selectedDate string,
-	location string,
-) (model.MovieDetails, []dto.MovieScheduleRow, error) {
-	movieQuery := `
+func (r *MovieHomeRepository) FindBySlug(ctx context.Context, slug string) (model.MovieDetails, error) {
+	query := `
 		SELECT
 			m.id,
 			m.name,
+			m.slug,
 			m.release_date,
 			m.duration_in_minute,
 			m.director_name,
@@ -39,90 +34,38 @@ func (r *MovieHomeRepository) FindMovieBySlug(
 		FROM movies m
 		LEFT JOIN movie_categories mc ON mc.movie_id = m.id
 		LEFT JOIN categories c ON c.id = mc.category_id
-		LEFT JOIN movie_casts mc2 ON mc2.movie_id = m.id
-		LEFT JOIN casts cs ON cs.id = mc2.cast_id
+		LEFT JOIN movie_casts mcast ON mcast.movie_id = m.id
+		LEFT JOIN casts cs ON cs.id = mcast.cast_id
 		WHERE m.slug = $1
 		GROUP BY m.id;
 	`
 
 	var movie model.MovieDetails
-	var categories []string
+	var genres []string
 	var casts []string
 	var updatedAt *time.Time
 
-	err := r.db.QueryRow(ctx, movieQuery, slug).Scan(
+	err := r.db.QueryRow(ctx, query, slug).Scan(
 		&movie.ID,
 		&movie.Name,
+		&movie.Slug,
 		&movie.ReleaseDate,
 		&movie.DurationInMinute,
 		&movie.DirectorName,
 		&movie.Synopsis,
 		&movie.Image,
-		&categories,
+		&genres,
 		&casts,
 		&movie.CreatedAt,
 		&updatedAt,
 	)
 	if err != nil {
-		return model.MovieDetails{}, nil, err
+		return model.MovieDetails{}, err
 	}
 
-	movie.Categories = categories
+	movie.Categories = genres
 	movie.Casts = casts
 	movie.UpdatedAt = updatedAt
 
-	scheduleQuery := `
-		SELECT
-			l.name AS location,
-			c.name AS cinema_name,
-			s.showtime AS showtime
-		FROM movie_cinemas mc
-		JOIN cinemas c ON c.id = mc.cinema_id
-		JOIN locations l ON l.id = c.location_id
-		JOIN showtimes s ON s.id = mc.showtime_id
-		JOIN movies m ON m.id = mc.movie_id
-		WHERE
-			m.slug = $1
-			AND (
-				$2 = ''
-				OR $2::date BETWEEN mc.start_date AND mc.end_date
-			)
-			AND (
-				$3 = ''
-				OR l.name ILIKE '%' || $3 || '%'
-			)
-		ORDER BY
-			l.name,
-			c.name,
-			s.showtime;
-	`
-
-	rows, err := r.db.Query(ctx, scheduleQuery, slug, selectedDate, location)
-	if err != nil {
-		return model.MovieDetails{}, nil, err
-	}
-	defer rows.Close()
-
-	schedules := make([]dto.MovieScheduleRow, 0)
-
-	for rows.Next() {
-		var schedule dto.MovieScheduleRow
-
-		err := rows.Scan(
-			&schedule.Location,
-			&schedule.CinemaName,
-			&schedule.Showtime,
-		)
-		if err != nil {
-			return model.MovieDetails{}, nil, err
-		}
-
-		schedules = append(schedules, schedule)
-	}
-
-	if err := rows.Err(); err != nil {
-		return model.MovieDetails{}, nil, err
-	}
-
-	return movie, schedules, nil
+	return movie, nil
 }
