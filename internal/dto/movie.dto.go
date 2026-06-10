@@ -46,3 +46,8 @@ type MovieSingleResponse struct {
 	Success bool          `json:"success"`
 	Data    MovieResponse `json:"data"`
 }
+
+type MovieParamsRequest struct {
+	Categories []string `form:"category"`
+	Name       *string  `form:"name"`
+}

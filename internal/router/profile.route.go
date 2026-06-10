@@ -8,7 +8,7 @@ import (
 	"github.com/tickitz-backend/internal/service"
 )
 
-func RegisterProfileRoute(router *gin.Engine, db *pgxpool.Pool) {
+func RegisterProfileRouter(router *gin.Engine, db *pgxpool.Pool) {
 	profileRoute := router.Group("/profile")
 	profileRepo := repository.NewProfileRepository(db)
 	profileService := service.NewProfileService(profileRepo)
