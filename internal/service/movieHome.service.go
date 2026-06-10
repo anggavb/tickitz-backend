@@ -68,3 +68,15 @@ func (s *MovieHomeService) GetMovieSchedulesBySlug(ctx context.Context, slug str
 
 	return responses, nil
 }
+
+func (s *MovieHomeService) GetLocations(
+	ctx context.Context,
+) ([]dto.MovieLocationRow, error) {
+	return s.movieScheduleRepository.FindLocation(ctx)
+}
+
+func (s *MovieHomeService) GetShowtimes(
+	ctx context.Context,
+) ([]dto.MovieShowtimeRow, error) {
+	return s.movieScheduleRepository.FindTime(ctx)
+}

@@ -16,3 +16,11 @@ type MovieDetails struct {
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        *time.Time `json:"updated_at,omitempty"`
 }
+
+type MovieLocationRow struct {
+	Location string `json:"location"`
+}
+
+type MovieShowtimeRow struct {
+	Showtime string `json:"showtime"`
+}

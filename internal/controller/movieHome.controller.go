@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/tickitz-backend/internal/dto"
+	"github.com/tickitz-backend/internal/response"
 	"github.com/tickitz-backend/internal/service"
 )
 
@@ -112,4 +113,52 @@ func (c *MovieHomeController) GetMovieSchedulesBySlug(ctx *gin.Context) {
 		Message: "movie schedules retrieved successfully",
 		Data:    schedules,
 	})
+}
+
+// GetLocations godoc
+// @Summary      Get schedule locations
+// @Description  Retrieve all available movie schedule locations.
+// @Tags         Movie Schedules
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /movies/schedules/locations [get]
+func (c *MovieHomeController) GetLocations(ctx *gin.Context) {
+	locations, err := c.movieHomeService.GetLocations(ctx.Request.Context())
+	if err != nil {
+		response.Error(ctx, http.StatusInternalServerError, "failed to get movie locations")
+		return
+	}
+
+	response.Success(
+		ctx,
+		http.StatusOK,
+		"movie locations retrieved successfully",
+		locations,
+	)
+}
+
+// GetShowtimes godoc
+// @Summary      Get schedule showtimes
+// @Description  Retrieve all available movie schedule showtimes.
+// @Tags         Movie Schedules
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /movies/schedules/showtimes [get]
+func (c *MovieHomeController) GetShowtimes(ctx *gin.Context) {
+	showtimes, err := c.movieHomeService.GetShowtimes(ctx.Request.Context())
+	if err != nil {
+		response.Error(ctx, http.StatusInternalServerError, "failed to get movie showtimes")
+		return
+	}
+
+	response.Success(
+		ctx,
+		http.StatusOK,
+		"movie showtimes retrieved successfully",
+		showtimes,
+	)
 }

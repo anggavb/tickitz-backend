@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tickitz-backend/internal/dto"
@@ -68,4 +69,60 @@ func (r *MovieScheduleRepository) FindByMovieSlug(ctx context.Context, slug stri
 	}
 
 	return schedules, nil
+}
+
+func (r *MovieScheduleRepository) FindLocation(
+	ctx context.Context,
+) ([]dto.MovieLocationRow, error) {
+	query := `
+        SELECT DISTINCT name AS location
+        FROM locations
+        ORDER BY name;
+    `
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("FindLocation query: %w", err)
+	}
+	defer rows.Close()
+
+	locations := make([]dto.MovieLocationRow, 0)
+	for rows.Next() {
+		var location dto.MovieLocationRow
+		if err := rows.Scan(&location.Location); err != nil {
+			return nil, fmt.Errorf("FindLocation scan: %w", err)
+		}
+		locations = append(locations, location)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("FindLocation rows: %w", err)
+	}
+	return locations, nil
+}
+
+func (r *MovieScheduleRepository) FindTime(
+	ctx context.Context,
+) ([]dto.MovieShowtimeRow, error) {
+	query := `
+        SELECT DISTINCT showtime
+        FROM showtimes
+        ORDER BY showtime;
+    `
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("FindTime query: %w", err)
+	}
+	defer rows.Close()
+
+	showtimes := make([]dto.MovieShowtimeRow, 0)
+	for rows.Next() {
+		var showtime dto.MovieShowtimeRow
+		if err := rows.Scan(&showtime.Showtime); err != nil {
+			return nil, fmt.Errorf("FindTime scan: %w", err)
+		}
+		showtimes = append(showtimes, showtime)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("FindTime rows: %w", err)
+	}
+	return showtimes, nil
 }

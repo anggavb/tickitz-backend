@@ -33,6 +33,14 @@ type MovieScheduleResponse struct {
 	Price      int    `json:"price"`
 }
 
+type MovieLocationRow struct {
+	Location string `json:"location"`
+}
+
+type MovieShowtimeRow struct {
+	Showtime string `json:"showtime"`
+}
+
 type SuccessResponse struct {
 	Success bool        `json:"success"`
 	Message string      `json:"message"`
