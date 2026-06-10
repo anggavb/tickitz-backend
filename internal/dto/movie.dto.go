@@ -1,5 +1,7 @@
 package dto
 
+import "time"
+
 type MovieRequest struct {
 	Name             string   `json:"name" form:"name" binding:"required"`
 	ReleaseDate      string   `json:"release_date" form:"release_date" binding:"required"`
@@ -50,4 +52,20 @@ type MovieSingleResponse struct {
 type MovieParamsRequest struct {
 	Categories []string `form:"category"`
 	Name       *string  `form:"name"`
+	Page       int      `form:"page"`
+	Limit      int      `form:"limit"`
+}
+
+type MoviePreviewResponse struct {
+	ID          int64     `json:"id"`
+	Name        string    `json:"name"`
+	Slug        string    `json:"slug"`
+	Image       string    `json:"image"`
+	ReleaseDate time.Time `json:"release_date"`
+	Categories  []string  `json:"categories"`
+}
+
+type GetAllMoviesResponse struct {
+	Data       any  `json:"data"`
+	Pagination Meta `json:"pagination"`
 }

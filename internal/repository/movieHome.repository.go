@@ -75,25 +75,24 @@ func (r *MovieHomeRepository) FindBySlug(ctx context.Context, slug string) (dto.
 }
 
 // GetAllMoviesByFilter
-func (r *MovieHomeRepository) GetAllMoviesByFilter(ctx context.Context, req dto.MovieParamsRequest) ([]model.MoviePreviewResponse, error) {
-	var sb strings.Builder
+func (r *MovieHomeRepository) GetAllMoviesByFilter(
+	ctx context.Context,
+	req dto.MovieParamsRequest,
+) ([]model.MoviePreviewResponse, int64, error) {
+
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+
+	if req.Limit <= 0 {
+		req.Limit = 10
+	}
+
+	offset := (req.Page - 1) * req.Limit
+
 	args := make([]any, 0)
 	idx := 1
 	conditions := make([]string, 0)
-
-	sb.WriteString(`
-		SELECT
-			m.id,
-			m.name,
-			m.slug,
-			m.image,
-			m.release_date,
-			ARRAY_AGG(DISTINCT c.name) AS categories
-		FROM movies m
-		JOIN movie_categories mc ON mc.movie_id = m.id
-		JOIN categories c ON c.id = mc.category_id
-		WHERE 1=1
-	`)
 
 	if len(req.Categories) > 0 {
 		placeholders := make([]string, 0, len(req.Categories))
@@ -121,12 +120,62 @@ func (r *MovieHomeRepository) GetAllMoviesByFilter(ctx context.Context, req dto.
 	if req.Name != nil && *req.Name != "" {
 		conditions = append(
 			conditions,
-			fmt.Sprintf("AND m.name ILIKE $%d", idx),
+			fmt.Sprintf(`AND m.name ILIKE $%d`, idx),
 		)
 
 		args = append(args, "%"+*req.Name+"%")
 		idx++
 	}
+
+	// ========================
+	// COUNT TOTAL DATA
+	// ========================
+
+	var countSb strings.Builder
+
+	countSb.WriteString(`
+		SELECT COUNT(DISTINCT m.id)
+		FROM movies m
+		JOIN movie_categories mc ON mc.movie_id = m.id
+		JOIN categories c ON c.id = mc.category_id
+		WHERE 1=1
+	`)
+
+	countSb.WriteString(" ")
+	countSb.WriteString(strings.Join(conditions, " "))
+
+	var totalData int64
+
+	err := r.db.QueryRow(
+		ctx,
+		countSb.String(),
+		args...,
+	).Scan(&totalData)
+
+	if err != nil {
+		log.Printf("[MovieHomeRepository][GetAllMoviesByFilter] count error: %v", err)
+		return nil, 0, err
+	}
+
+	// ========================
+	// MAIN QUERY
+	// ========================
+
+	var sb strings.Builder
+
+	sb.WriteString(`
+		SELECT
+			m.id,
+			m.name,
+			m.slug,
+			m.image,
+			m.release_date,
+			ARRAY_AGG(DISTINCT c.name) AS categories
+		FROM movies m
+		JOIN movie_categories mc ON mc.movie_id = m.id
+		JOIN categories c ON c.id = mc.category_id
+		WHERE 1=1
+	`)
 
 	sb.WriteString(" ")
 	sb.WriteString(strings.Join(conditions, " "))
@@ -136,18 +185,30 @@ func (r *MovieHomeRepository) GetAllMoviesByFilter(ctx context.Context, req dto.
 			m.id,
 			m.name,
 			m.slug,
+			m.image,
 			m.release_date
 		ORDER BY m.release_date DESC
 	`)
 
-	query := sb.String()
+	sb.WriteString(fmt.Sprintf(`
+		LIMIT $%d
+		OFFSET $%d
+	`, idx, idx+1))
 
-	rows, err := r.db.Query(ctx, query, args...)
+	queryArgs := append(args, req.Limit, offset)
+
+	rows, err := r.db.Query(
+		ctx,
+		sb.String(),
+		queryArgs...,
+	)
 	if err != nil {
-		return nil, err
+		log.Printf("[MovieHomeRepository][GetAllMoviesByFilter] query error: %v", err)
+		return nil, 0, err
 	}
 
 	defer rows.Close()
+
 	var movies []model.MoviePreviewResponse
 
 	for rows.Next() {
@@ -161,16 +222,17 @@ func (r *MovieHomeRepository) GetAllMoviesByFilter(ctx context.Context, req dto.
 			&movie.ReleaseDate,
 			&movie.Categories,
 		); err != nil {
-			log.Printf("[MovieHomeRepository][GetAllMoviesByFilter] query error: %v", err)
-			return nil, err
+			log.Printf("[MovieHomeRepository][GetAllMoviesByFilter] scan error: %v", err)
+			return nil, 0, err
 		}
+
 		movies = append(movies, movie)
 	}
 
 	if err := rows.Err(); err != nil {
 		log.Printf("[MovieHomeRepository][GetAllMoviesByFilter] rows error: %v", err)
-		return nil, err
+		return nil, 0, err
 	}
 
-	return movies, nil
+	return movies, totalData, nil
 }

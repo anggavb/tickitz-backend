@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"log"
+	"math"
 
 	"github.com/tickitz-backend/internal/dto"
 	"github.com/tickitz-backend/internal/errs"
-	"github.com/tickitz-backend/internal/model"
 
 	"github.com/tickitz-backend/internal/repository"
 )
@@ -87,14 +87,36 @@ func (s *MovieHomeService) GetShowtimes(
 func (s *MovieHomeService) GetAllMovies(
 	ctx context.Context,
 	req dto.MovieParamsRequest,
-) ([]model.MoviePreviewResponse, error) {
+) (*dto.GetAllMoviesResponse, error) {
 
-	movies, err := s.movieHomeRepository.GetAllMoviesByFilter(ctx, req)
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+
+	if req.Limit <= 0 {
+		req.Limit = 10
+	}
+
+	movies, totalData, err := s.movieHomeRepository.GetAllMoviesByFilter(ctx, req)
 	if err != nil {
 		log.Printf("[MovieHomeService][GetAllMovies] repository error: %v", err)
 
 		return nil, errs.ErrGetMovies
 	}
 
-	return movies, nil
+	totalPage := int64(math.Ceil(
+		float64(totalData) / float64(req.Limit),
+	))
+
+	result := &dto.GetAllMoviesResponse{
+		Data: movies,
+		Pagination: dto.Meta{
+			Page:      req.Page,
+			Limit:     req.Limit,
+			TotalData: totalData,
+			TotalPage: totalPage,
+		},
+	}
+
+	return result, nil
 }
