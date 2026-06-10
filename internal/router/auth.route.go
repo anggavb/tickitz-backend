@@ -18,4 +18,5 @@ func RegisterAuthRouter(router *gin.Engine, db *pgxpool.Pool) {
 	authRouter.POST("/activate", authController.Activate)
 	authRouter.POST("/otp", authController.GetNewOTP)
 	authRouter.POST("/signin", authController.Login)
+	authRouter.PATCH("/password", authController.ChangeUserPassword)
 }

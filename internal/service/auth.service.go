@@ -203,3 +203,17 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (dto.Lo
 	return data, nil
 
 }
+
+func (s *AuthService) ChangeUserPassword(ctx context.Context, newPassword string, id int) error {
+	var hc pkg.HashConfig
+	hc.OwaspRecomendedHashConfig()
+
+	hashedPass := hc.Hash(newPassword)
+
+	if err := s.authRepo.UpdatePassword(ctx, hashedPass, id); err != nil {
+		log.Printf("[ChangeUserPassword] UpdatePassword error: %v\n", err)
+		return err
+	}
+
+	return nil
+}
