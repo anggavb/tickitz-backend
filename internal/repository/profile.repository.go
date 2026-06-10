@@ -2,8 +2,12 @@ package repository
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tickitz-backend/internal/dto"
+	"github.com/tickitz-backend/internal/errs"
 	"github.com/tickitz-backend/internal/model"
 )
 
@@ -24,4 +28,48 @@ func (r *ProfileRepository) GetProfile(ctx context.Context, id int) (model.UserP
 		return model.UserProfile{}, err
 	}
 	return profile, nil
+}
+
+func (r *ProfileRepository) UpdateProfile(ctx context.Context, req dto.UpdateProfileRequest, userID int) error {
+	var sb strings.Builder
+	idx := 1
+	args := make([]any, 0)
+	sets := make([]string, 0)
+
+	if req.FirstName != nil {
+		sets = append(sets, fmt.Sprintf(`first_name = $%d`, idx))
+		args = append(args, *req.FirstName)
+		idx++
+	}
+	if req.LastName != nil {
+		sets = append(sets, fmt.Sprintf(`last_name = $%d`, idx))
+		args = append(args, *req.LastName)
+		idx++
+	}
+	if req.Phone != nil {
+		sets = append(sets, fmt.Sprintf(`phone = $%d`, idx))
+		args = append(args, *req.Phone)
+		idx++
+	}
+	if req.Photo != nil {
+		sets = append(sets, fmt.Sprintf(`photo = $%d`, idx))
+		args = append(args, *req.Photo)
+		idx++
+	}
+
+	if len(sets) == 0 {
+		return errs.ErrNothingToUpdate
+	}
+	sb.WriteString(`UPDATE users SET `)
+	sb.WriteString(strings.Join(sets, ", "))
+	sb.WriteString(fmt.Sprintf(` WHERE id= $%d`, idx))
+	args = append(args, userID)
+
+	query := sb.String()
+
+	if _, err := r.db.Exec(ctx, query, args...); err != nil {
+		return err
+	}
+	return nil
+
 }

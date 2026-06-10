@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -313,4 +314,39 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		"Login success",
 		data,
 	)
+}
+func (c *AuthController) ChangeUserPassword(ctx *gin.Context) {
+	var req dto.ChangePasswordRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Printf("[ChangeUserPassword] BindJSON error: %v\n", err)
+
+		if strings.Contains(err.Error(), "NewPassword") {
+			response.Error(ctx, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		response.Error(ctx, http.StatusBadRequest, "invalid request")
+		return
+	}
+
+	// TODO: ambil dari JWT claims
+	userID := 1
+
+	if err := c.authService.ChangeUserPassword(
+		ctx.Request.Context(),
+		req.NewPassword,
+		userID,
+	); err != nil {
+		log.Printf("[ChangeUserPassword] Service error: %v\n", err)
+
+		response.Error(
+			ctx,
+			http.StatusInternalServerError,
+			"failed to change password",
+		)
+		return
+	}
+
+	response.Success(ctx, http.StatusOK, "password updated", nil)
 }
