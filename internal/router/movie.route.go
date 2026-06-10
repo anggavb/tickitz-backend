@@ -18,7 +18,7 @@ func RegisterMovieRouter(router *gin.Engine, db *pgxpool.Pool) {
 	movieRouter.GET("", movieController.List)
 	movieRouter.GET(":id", movieController.GetByID)
 	movieRouter.POST("", movieController.Create)
-	movieRouter.PUT(":id", movieController.Update)
+	movieRouter.PATCH(":id", movieController.Update)
 	movieRouter.DELETE(":id", movieController.Delete)
 
 	adminRouter.GET("/categories", movieController.ListCategories)
