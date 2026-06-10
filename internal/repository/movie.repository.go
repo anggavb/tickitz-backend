@@ -351,6 +351,31 @@ func (r *MovieRepository) Delete(ctx context.Context, movieID int64) error {
 		_ = tx.Rollback(ctx)
 	}()
 
+	// Delete order_details that reference movie_cinemas for this movie
+	if _, err := tx.Exec(ctx, `
+		DELETE FROM order_details 
+		WHERE movie_cinema_id IN (
+			SELECT id FROM movie_cinemas WHERE movie_id = $1
+		)
+	`, movieID); err != nil {
+		return err
+	}
+
+	// Delete orders that reference movie_cinemas for this movie
+	if _, err := tx.Exec(ctx, `
+		DELETE FROM orders 
+		WHERE movie_cinema_id IN (
+			SELECT id FROM movie_cinemas WHERE movie_id = $1
+		)
+	`, movieID); err != nil {
+		return err
+	}
+
+	// Delete movie_cinemas for this movie
+	if _, err := tx.Exec(ctx, `DELETE FROM movie_cinemas WHERE movie_id = $1`, movieID); err != nil {
+		return err
+	}
+
 	if err := r.deleteMovieCategories(ctx, tx, movieID); err != nil {
 		return err
 	}
