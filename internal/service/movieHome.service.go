@@ -59,8 +59,7 @@ func (s *MovieHomeService) GetMovieSchedulesBySlug(ctx context.Context, slug str
 		responses = append(responses, dto.MovieScheduleResponse{
 			Location:   schedule.Location,
 			CinemaName: schedule.CinemaName,
-			StartDate:  schedule.StartDate.Format("2006-01-02"),
-			EndDate:    schedule.EndDate.Format("2006-01-02"),
+			ShowDate:   schedule.ShowDate.Format("2006-01-02"),
 			Showtime:   schedule.Showtime.Format("15:04"),
 			Price:      schedule.Price,
 		})

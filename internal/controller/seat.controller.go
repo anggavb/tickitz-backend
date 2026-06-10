@@ -37,7 +37,7 @@ func (c *SeatController) GetSeatMap(ctx *gin.Context) {
 	movieCinemaID, err := strconv.ParseInt(ctx.Param("movie_cinema_id"), 10, 64)
 	if err != nil || movieCinemaID <= 0 {
 		ctx.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Status:  "error",
+			Success: false,
 			Message: "Invalid movie cinema ID",
 		})
 		return
@@ -47,14 +47,14 @@ func (c *SeatController) GetSeatMap(ctx *gin.Context) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
 			ctx.JSON(http.StatusNotFound, dto.ErrorResponse{
-				Status:  "error",
+				Success: false,
 				Message: "Movie cinema schedule not found",
 			})
 			return
 		}
 
 		ctx.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Status:  "error",
+			Success: false,
 			Message: "Failed to get seat map",
 		})
 		return

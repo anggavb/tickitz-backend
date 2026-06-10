@@ -18,8 +18,7 @@ type MovieDetailResponse struct {
 type MovieScheduleRow struct {
 	Location   string
 	CinemaName string
-	StartDate  time.Time
-	EndDate    time.Time
+	ShowDate   time.Time
 	Showtime   time.Time
 	Price      int
 }
@@ -27,8 +26,7 @@ type MovieScheduleRow struct {
 type MovieScheduleResponse struct {
 	Location   string `json:"location"`
 	CinemaName string `json:"cinema_name"`
-	StartDate  string `json:"start_date"`
-	EndDate    string `json:"end_date"`
+	ShowDate   string `json:"show_date"`
 	Showtime   string `json:"showtime"`
 	Price      int    `json:"price"`
 }
