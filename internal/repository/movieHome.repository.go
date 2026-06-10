@@ -85,7 +85,7 @@ func (r *MovieHomeRepository) GetAllMoviesByFilter(
 	}
 
 	if req.Limit <= 0 {
-		req.Limit = 10
+		req.Limit = 12
 	}
 
 	offset := (req.Page - 1) * req.Limit
