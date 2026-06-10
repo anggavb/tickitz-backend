@@ -21,7 +21,8 @@ func NewProfileController(profileService *service.ProfileService) *ProfileContro
 }
 
 func (c *ProfileController) GetProfileById(ctx *gin.Context) {
-	userID := 2
+	// TODO: ambil dari claims
+	userID := 2 // dummy
 
 	profile, err := c.ProfileService.GetUserProfile(
 		ctx.Request.Context(),
