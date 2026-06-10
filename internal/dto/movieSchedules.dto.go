@@ -38,14 +38,3 @@ type MovieLocationRow struct {
 type MovieShowtimeRow struct {
 	Showtime string `json:"showtime"`
 }
-
-type SuccessResponse struct {
-	Success bool        `json:"success"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
-}
-
-type ErrorResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
-}
