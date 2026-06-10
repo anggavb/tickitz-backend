@@ -20,6 +20,15 @@ func NewProfileController(profileService *service.ProfileService) *ProfileContro
 	}
 }
 
+// GetProfileById godoc
+// @Summary Get user profile
+// @Description Get profile of currently logged in user
+// @Tags Profile
+// @Accept json
+// @Produce json
+// @Success 200 {object} dto.UserProfile
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /profile [get]
 func (c *ProfileController) GetProfileById(ctx *gin.Context) {
 	// TODO: ambil dari claims
 	userID := 2 // dummy
@@ -47,6 +56,17 @@ func (c *ProfileController) GetProfileById(ctx *gin.Context) {
 	)
 }
 
+// UpdateUserProfile godoc
+// @Summary Update user profile
+// @Description Update profile of currently logged in user
+// @Tags Profile
+// @Accept json
+// @Produce json
+// @Param request body dto.UpdateProfileRequest true "Profile data"
+// @Success 200 {object} dto.SuccessResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /profile [put]
 func (c *ProfileController) UpdateUserProfile(ctx *gin.Context) {
 	// TODO: ambil dari JWT claims
 	userID := 2
