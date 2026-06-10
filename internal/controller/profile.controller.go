@@ -21,7 +21,30 @@ func NewProfileController(profileService *service.ProfileService) *ProfileContro
 }
 
 func (c *ProfileController) GetProfileById(ctx *gin.Context) {
-	// id ngambil dari claims -> menunggu middleware
+	// TODO: ambil dari claims
+	userID := 2 // dummy
+
+	profile, err := c.ProfileService.GetUserProfile(
+		ctx.Request.Context(),
+		userID,
+	)
+	if err != nil {
+		log.Printf("[GetProfileById] GetUserProfile error: %v\n", err)
+
+		response.Error(
+			ctx,
+			http.StatusInternalServerError,
+			"failed to get profile",
+		)
+		return
+	}
+
+	response.Success(
+		ctx,
+		http.StatusOK,
+		"success to get profile",
+		profile,
+	)
 }
 
 func (c *ProfileController) UpdateUserProfile(ctx *gin.Context) {
