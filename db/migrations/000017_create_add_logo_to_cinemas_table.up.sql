@@ -1,0 +1,1 @@
+ALTER TABLE "cinemas" ADD COLUMN "logo" varchar;

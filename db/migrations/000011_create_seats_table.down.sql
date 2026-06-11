@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS "seats";
+
+DROP TYPE IF EXISTS "seatType";
