@@ -1,9 +1,9 @@
 INSERT INTO movies (id, name, release_date, duration_in_minute, director_name, synopsis, image, updated_at, slug) VALUES
-  (1, 'Echoes of Jakarta', '2026-07-12', 118, 'Rangga Wiratama', 'A sound engineer follows a mysterious recording through the late-night streets of Jakarta.', '/movies/echoes-of-jakarta.jpg', now(), 'echoes-of-jakarta'),
-  (2, 'Orbit Seven', '2026-07-01', 132, 'Mira Anggraini', 'A small crew must repair a failing research station before its orbit decays.', '/movies/orbit-seven.jpg', now(), 'orbit-seven'),
-  (3, 'The Last Screening', '2026-07-18', 101, 'Dewi Kartika', 'A closing cinema becomes the center of a haunting tied to its final reel.', '/movies/the-last-screening.jpg', now(), 'the-last-screening'),
+  (1, 'Echoes of Jakarta', '2026-05-12', 118, 'Rangga Wiratama', 'A sound engineer follows a mysterious recording through the late-night streets of Jakarta.', '/movies/echoes-of-jakarta.jpg', now(), 'echoes-of-jakarta'),
+  (2, 'Orbit Seven', '2026-06-01', 132, 'Mira Anggraini', 'A small crew must repair a failing research station before its orbit decays.', '/movies/orbit-seven.jpg', now(), 'orbit-seven'),
+  (3, 'The Last Screening', '2026-04-18', 101, 'Dewi Kartika', 'A closing cinema becomes the center of a haunting tied to its final reel.', '/movies/the-last-screening.jpg', now(), 'the-last-screening'),
   (4, 'Letters from Bandung', '2026-03-22', 109, 'Fajar Nugroho', 'Two strangers trade misplaced letters and discover an old family secret.', '/movies/letters-from-bandung.jpg', now(), 'letters-from-bandung'),
-  (5, 'Laugh Track Heroes', '2026-07-07', 96, 'Sari Wulandari', 'A struggling comedy troupe gets one chaotic shot at saving their theater.', '/movies/laugh-track-heroes.jpg', now(), 'laugh-track-heroes'),
+  (5, 'Laugh Track Heroes', '2026-06-07', 96, 'Sari Wulandari', 'A struggling comedy troupe gets one chaotic shot at saving their theater.', '/movies/laugh-track-heroes.jpg', now(), 'laugh-track-heroes'),
   (6, 'River of Ashes', '2026-02-14', 124, 'Bayu Prakoso', 'A detective returns to his hometown to investigate a case everyone wants forgotten.', '/movies/river-of-ashes.jpg', now(), 'river-of-ashes')
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
