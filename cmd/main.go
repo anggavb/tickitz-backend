@@ -33,11 +33,19 @@ func main() {
 
 	db, err := config.ConnectPsql()
 	if err != nil {
-		log.Fatalf("DB connection error. \ncause: %s", err.Error())
+		log.Printf("DB connection error. \ncause: %s", err.Error())
 	}
 	defer db.Close()
 	log.Println("DB Connected")
-	router.InitRouter(app, db)
+
+	rdb, err := config.ConnectRDB()
+	if err != nil {
+		log.Printf("Redis connection error. \ncause: %s", err.Error())
+	}
+	defer rdb.Close()
+	log.Println("Redis Connected")
+
+	router.InitRouter(app, db, rdb)
 	app.Run(fmt.Sprintf("%s:%s", os.Getenv("APP_HOST"), os.Getenv("APP_PORT")))
 
 }

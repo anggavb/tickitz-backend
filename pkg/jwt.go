@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"errors"
-	"log"
 	"os"
 	"time"
 
@@ -10,18 +9,20 @@ import (
 )
 
 type Claims struct {
-	Id    int
-	Email string
+	UserId int    `json:"user_id"`
+	Email  string `json:"email"`
+	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
-func NewClaims(id int, email string) *Claims {
+func NewClaims(id int, email string, role string) *Claims {
 	return &Claims{
-		Id:    id,
-		Email: email,
+		UserId: id,
+		Email:  email,
+		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    os.Getenv("JWT_ISSUER"),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(2 * time.Hour)),
 		},
 	}
 }
@@ -40,8 +41,10 @@ func (c *Claims) VerifyJWT(token string) error {
 	if jwtSecret == "" {
 		return errors.New("missing secret key")
 	}
-	log.Println("Token", token)
 	jwtToken, err := jwt.ParseWithClaims(token, c, func(t *jwt.Token) (any, error) {
+		if t.Method != jwt.SigningMethodHS256 {
+			return nil, jwt.ErrTokenSignatureInvalid
+		}
 		return []byte(jwtSecret), nil
 	})
 

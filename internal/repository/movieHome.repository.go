@@ -74,7 +74,6 @@ func (r *MovieHomeRepository) FindBySlug(ctx context.Context, slug string) (dto.
 	return movie, nil
 }
 
-// GetAllMoviesByFilter
 func (r *MovieHomeRepository) GetAllMoviesByFilter(
 	ctx context.Context,
 	req dto.MovieParamsRequest,
@@ -103,8 +102,7 @@ func (r *MovieHomeRepository) GetAllMoviesByFilter(
 			idx++
 		}
 
-		conditions = append(
-			conditions,
+		conditions = append(conditions,
 			fmt.Sprintf(`
 				AND EXISTS (
 					SELECT 1
@@ -202,6 +200,7 @@ func (r *MovieHomeRepository) GetAllMoviesByFilter(
 		sb.String(),
 		queryArgs...,
 	)
+
 	if err != nil {
 		log.Printf("[MovieHomeRepository][GetAllMoviesByFilter] query error: %v", err)
 		return nil, 0, err

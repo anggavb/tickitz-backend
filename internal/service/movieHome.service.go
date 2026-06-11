@@ -101,7 +101,6 @@ func (s *MovieHomeService) GetAllMovies(
 	movies, totalData, err := s.movieHomeRepository.GetAllMoviesByFilter(ctx, req)
 	if err != nil {
 		log.Printf("[MovieHomeService][GetAllMovies] repository error: %v", err)
-
 		return nil, errs.ErrGetMovies
 	}
 

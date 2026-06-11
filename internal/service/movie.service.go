@@ -28,8 +28,8 @@ func NewMovieService(movieRepo *repository.MovieRepository) *MovieService {
 	}
 }
 
-func (s *MovieService) List(ctx context.Context, page int, limit int) ([]model.Movie, MoviePagination, error) {
-	totalData, err := s.movieRepo.CountAll(ctx)
+func (s *MovieService) List(ctx context.Context, page int, limit int, releaseMonth string) ([]model.Movie, MoviePagination, error) {
+	totalData, err := s.movieRepo.CountAll(ctx, releaseMonth)
 	if err != nil {
 		return nil, MoviePagination{}, err
 	}
@@ -47,7 +47,7 @@ func (s *MovieService) List(ctx context.Context, page int, limit int) ([]model.M
 	}
 
 	offset := (page - 1) * limit
-	movies, err := s.movieRepo.FindAllPaginated(ctx, limit, offset)
+	movies, err := s.movieRepo.FindAllPaginated(ctx, limit, offset, releaseMonth)
 	if err != nil {
 		return nil, MoviePagination{}, err
 	}
@@ -116,6 +116,10 @@ func (s *MovieService) Update(ctx context.Context, movieID int64, req dto.MovieR
 
 func (s *MovieService) Delete(ctx context.Context, movieID int64) error {
 	return s.movieRepo.Delete(ctx, movieID)
+}
+
+func (s *MovieService) ListReleaseMonths(ctx context.Context) ([]string, error) {
+	return s.movieRepo.FindReleaseMonths(ctx)
 }
 
 func (s *MovieService) ListCategories(ctx context.Context) ([]string, error) {

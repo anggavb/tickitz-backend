@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tickitz-backend/internal/dto"
 	"github.com/tickitz-backend/internal/errs"
+	"github.com/tickitz-backend/internal/jwttoken"
 	"github.com/tickitz-backend/internal/response"
 	"github.com/tickitz-backend/internal/service"
 )
@@ -315,6 +316,34 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		data,
 	)
 }
+
+func (c *AuthController) Logout(ctx *gin.Context) {
+	claims, ok := jwttoken.GetClaims(ctx)
+	if !ok {
+		response.Error(ctx, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	tokenHashValue, ok := ctx.Get("token_hash")
+	if !ok {
+		response.Error(ctx, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	tokenHash, ok := tokenHashValue.(string)
+	if !ok {
+		response.Error(ctx, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if err := c.authService.Logout(ctx.Request.Context(), tokenHash, claims.UserId); err != nil {
+		response.Error(ctx, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	response.Success(ctx, http.StatusOK, "Logout success", nil)
+}
+
 func (c *AuthController) ChangeUserPassword(ctx *gin.Context) {
 	var req dto.ChangePasswordRequest
 

@@ -23,6 +23,7 @@ type LoginResponse struct {
 	Id    int    `json:"id"`
 	Token string `json:"token"`
 	Photo string `json:"photo"`
+	Role  string `json:"role"`
 }
 
 type ChangePasswordRequest struct {

@@ -9,17 +9,20 @@ import (
 
 	"github.com/tickitz-backend/internal/dto"
 	"github.com/tickitz-backend/internal/errs"
+	"github.com/tickitz-backend/internal/jwttoken"
 	"github.com/tickitz-backend/internal/repository"
 	"github.com/tickitz-backend/pkg"
 )
 
 type AuthService struct {
-	authRepo *repository.AuthRepository
+	authRepo  *repository.AuthRepository
+	authCache *repository.AuthCacheRepository
 }
 
-func NewAuthService(authRepo *repository.AuthRepository) *AuthService {
+func NewAuthService(authRepo *repository.AuthRepository, authCache *repository.AuthCacheRepository) *AuthService {
 	return &AuthService{
-		authRepo: authRepo,
+		authRepo:  authRepo,
+		authCache: authCache,
 	}
 }
 
@@ -187,21 +190,47 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (dto.Lo
 		return dto.LoginResponse{}, errs.ErrInvalidCredentials
 	}
 
-	claims := pkg.NewClaims(user.Id, email)
+	if !user.IsVerified {
+		return dto.LoginResponse{}, errs.ErrAccountNotActive
+	}
+
+	claims := pkg.NewClaims(user.Id, email, user.Role)
 
 	token, err := claims.GenJWT()
 	if err != nil {
 		log.Printf("[Login] Generate JWT error: %v\n", err)
 		return dto.LoginResponse{}, errs.ErrInternalServer
 	}
+
+	expiresAt, err := claims.GetExpirationTime()
+	if err != nil || expiresAt == nil {
+		log.Printf("[Login] Get JWT expiration error: %v\n", err)
+		return dto.LoginResponse{}, errs.ErrInternalServer
+	}
+
+	if err := s.authCache.StoreToken(ctx, jwttoken.HashToken(token), user.Id, expiresAt.Time); err != nil {
+		log.Printf("[Login] Store token error: %v\n", err)
+		return dto.LoginResponse{}, errs.ErrInternalServer
+	}
+
 	data := dto.LoginResponse{
 		Id:    user.Id,
 		Photo: user.Photo,
 		Token: token,
+		Role:  user.Role,
 	}
 
 	return data, nil
 
+}
+
+func (s *AuthService) Logout(ctx context.Context, tokenHash string, userID int) error {
+	if err := s.authCache.DeleteToken(ctx, tokenHash, userID); err != nil {
+		log.Printf("[Logout] Delete token error: %v\n", err)
+		return errs.ErrInternalServer
+	}
+
+	return nil
 }
 
 func (s *AuthService) ChangeUserPassword(ctx context.Context, newPassword string, id int) error {

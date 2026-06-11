@@ -15,7 +15,7 @@ import (
 type HashConfig struct {
 	Memory  uint32
 	Time    uint32
-	Threds  uint8
+	Threads uint8
 	KeyLen  uint32
 	SaltLen uint32
 }
@@ -24,7 +24,7 @@ func NewHashConfig(memory, time uint32, threads uint8, keylen, saltlen uint32) *
 	return &HashConfig{
 		Memory:  memory,
 		Time:    time,
-		Threds:  threads,
+		Threads: threads,
 		KeyLen:  keylen,
 		SaltLen: saltlen,
 	}
@@ -34,7 +34,7 @@ func (h *HashConfig) OwaspRecomendedHashConfig() {
 	// owasp min recomendation (2023 may)
 	h.Memory = 32 * 1024
 	h.Time = 2
-	h.Threds = 1
+	h.Threads = 1
 	h.KeyLen = 32
 	h.SaltLen = 16
 }
@@ -47,12 +47,12 @@ func (h *HashConfig) genSalt() []byte {
 
 func (h *HashConfig) Hash(pwd string) string {
 	salt := h.genSalt()
-	hash := argon2.IDKey([]byte(pwd), salt, h.Time, h.Memory, h.Threds, h.KeyLen)
+	hash := argon2.IDKey([]byte(pwd), salt, h.Time, h.Memory, h.Threads, h.KeyLen)
 
 	version := argon2.Version
 	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
 	encodedHash := base64.RawStdEncoding.EncodeToString(hash)
-	out := fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s", version, h.Memory, h.Time, h.Threds, encodedSalt, encodedHash)
+	out := fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s", version, h.Memory, h.Time, h.Threads, encodedSalt, encodedHash)
 	return out
 }
 

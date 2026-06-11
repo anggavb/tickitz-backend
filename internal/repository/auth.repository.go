@@ -21,8 +21,11 @@ func NewAuthRepository(db *pgxpool.Pool) *AuthRepository {
 
 func (r *AuthRepository) Create(ctx context.Context, email string, password string, token string) (int64, error) {
 	sql := `
-		INSERT INTO users (email, password, activation_token, verified_at, token_expire_at)
-			VALUES ($1, $2, $3, NULL, NOW() + INTERVAL '60 minutes')
+		WITH first_tier AS (
+			SELECT id FROM loyalty_tiers ORDER BY id ASC LIMIT 1
+		)
+		INSERT INTO users (email, password, activation_token, verified_at, token_expire_at, loyalty_tier_id)
+			VALUES ($1, $2, $3, NULL, NOW() + INTERVAL '60 minutes', (SELECT id FROM first_tier))
 			RETURNING id
 		`
 	var userID int64
@@ -131,7 +134,7 @@ func (r *AuthRepository) UpdateOTP(ctx context.Context, email string, token stri
 }
 
 func (r *AuthRepository) GetUserPassword(ctx context.Context, email string) (model.GetUserLogin, error) {
-	sql := `SELECT id, password, COALESCE(photo, '') FROM users WHERE email=$1`
+	sql := `SELECT id, password, COALESCE(photo, ''), role, verified_at IS NOT NULL FROM users WHERE email=$1`
 
 	var user model.GetUserLogin
 
@@ -139,6 +142,8 @@ func (r *AuthRepository) GetUserPassword(ctx context.Context, email string) (mod
 		&user.Id,
 		&user.Password,
 		&user.Photo,
+		&user.Role,
+		&user.IsVerified,
 	)
 
 	if err != nil {

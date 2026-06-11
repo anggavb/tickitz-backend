@@ -1,13 +1,8 @@
 INSERT INTO showtimes (id, showtime) VALUES
-  (1, '10:00:00'),
-  (2, '14:30:00'),
-  (3, '19:30:00'),
-  (4, '10:00:00'),
-  (5, '14:30:00'),
-  (6, '19:30:00'),
-  (7, '10:00:00'),
-  (8, '14:30:00'),
-  (9, '19:30:00')
+  (1, '08:30:00'),
+  (2, '10:00:00'),
+  (3, '14:30:00'),
+  (4, '19:30:00')
 ON CONFLICT (id) DO UPDATE SET
   showtime = EXCLUDED.showtime;
 
@@ -26,11 +21,7 @@ FROM (
     (1, 1, '2026-06-10'::date, '2026-06-16'::date, 1, 50000),
     (2, 1, '2026-06-10'::date, '2026-06-16'::date, 2, 65000),
     (3, 1, '2026-06-10'::date, '2026-06-16'::date, 3, 80000),
-    (4, 2, '2026-06-10'::date, '2026-06-16'::date, 4, 50000),
-    (5, 2, '2026-06-10'::date, '2026-06-16'::date, 5, 65000),
-    (6, 3, '2026-06-10'::date, '2026-06-16'::date, 6, 80000),
-    (1, 3, '2026-06-10'::date, '2026-06-16'::date, 7, 50000),
-    (2, 3, '2026-06-10'::date, '2026-06-16'::date, 8, 65000)
+    (4, 2, '2026-06-10'::date, '2026-06-16'::date, 4, 50000)
 ) AS schedule_templates(movie_id, cinema_id, start_date, end_date, showtime_id, price)
 CROSS JOIN LATERAL generate_series(schedule_templates.start_date, schedule_templates.end_date, interval '1 day') AS generated_date
 ON CONFLICT (movie_id, cinema_id, show_date, showtime_id) DO UPDATE SET
