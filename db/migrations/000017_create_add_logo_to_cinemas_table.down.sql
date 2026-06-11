@@ -1,1 +1,0 @@
-ALTER TABLE "cinemas" DROP COLUMN "logo";
