@@ -22,151 +22,102 @@ func (r *OrderRepository) GetOrderHistory(
 	userID int64,
 	page int,
 	limit int,
-) ([]dto.OrderHistory, int64, error) {
+) ([]dto.OrderHistory, int, error) {
 
 	offset := (page - 1) * limit
 
-	var totalData int64
-
+	// COUNT QUERY
 	countQuery := `
-		SELECT COUNT(*)
-		FROM orders
-		WHERE user_id = $1
+		SELECT COUNT(DISTINCT o.id)
+		FROM orders o
+		WHERE o.user_id = $1
 	`
 
-	err := r.db.QueryRow(
-		ctx,
-		countQuery,
-		userID,
-	).Scan(&totalData)
+	var total int
+	err := r.db.QueryRow(ctx, countQuery, userID).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
 
+	// MAIN QUERY
 	query := `
-		SELECT
-			o.id,
-			o.created_at,
+	SELECT
+		o.id,
+		o.created_at AS order_date,
 
-			m.name,
-			'' AS movie_category,
+		m.name AS movie_name,
+		'' AS movie_category,
 
-			cnm.name,
-			cnm.logo,
+		cnm.name AS cinema_name,
+		cnm.logo AS cinema_logo,
 
-			mcnm.show_date,
-			TO_CHAR(sts.showtime, 'HH24:MI'),
+		mc.show_date,
+		sts.showtime::text AS show_time,
 
-			COALESCE(
-				STRING_AGG(
-					DISTINCT (s.row || s.number::text),
-					', '
-				),
-				''
-			) AS seats,
+		COALESCE(STRING_AGG(s.row || s.number::text, ', '), '') AS seats,
+		COUNT(od.id)::int AS seat_count,
 
-			COUNT(DISTINCT od.id)::int AS seat_count,
+		o.payment_reference,
+		o.total_price,
+		o.status AS payment_status,
 
-			o.payment_reference,
-			o.total_price,
+		'' AS ticket_status,
 
-			o.status AS payment_status,
+		o.expired_at
 
-			'' AS ticket_status,
+	FROM orders o
+	JOIN movie_cinemas mc ON mc.id = o.movie_cinema_id
+	JOIN movies m ON m.id = mc.movie_id
+	JOIN cinemas cnm ON cnm.id = mc.cinema_id
+	JOIN showtimes sts ON sts.id = o.showtime_id
 
-			o.expired_at
+	LEFT JOIN order_details od ON od.order_id = o.id
+	LEFT JOIN seats s ON s.id = od.seat_id
 
-		FROM orders o
+	WHERE o.user_id = $1
 
-		JOIN movie_cinemas mcnm
-			ON mcnm.id = o.movie_cinema_id
+	GROUP BY
+		o.id, m.id, cnm.id, mc.id, sts.id
 
-		JOIN movies m
-			ON m.id = mcnm.movie_id
-
-		JOIN cinemas cnm
-			ON cnm.id = mcnm.cinema_id
-
-		JOIN showtimes sts
-			ON sts.id = mcnm.showtime_id
-
-		LEFT JOIN order_details od
-			ON od.order_id = o.id
-
-		LEFT JOIN seats s
-			ON s.id = od.seat_id
-
-		WHERE o.user_id = $1
-
-		GROUP BY
-			o.id,
-			o.created_at,
-			m.name,
-			cnm.name,
-			cnm.logo,
-			mcnm.show_date,
-			sts.showtime,
-			o.payment_reference,
-			o.total_price,
-			o.status,
-			o.expired_at
-
-		ORDER BY o.created_at DESC
-		LIMIT $2
-		OFFSET $3
+	ORDER BY o.created_at DESC
+	LIMIT $2 OFFSET $3
 	`
 
-	rows, err := r.db.Query(
-		ctx,
-		query,
-		userID,
-		limit,
-		offset,
-	)
+	rows, err := r.db.Query(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer rows.Close()
 
-	histories := make([]dto.OrderHistory, 0)
+	var results []dto.OrderHistory
 
 	for rows.Next() {
-		var history dto.OrderHistory
+		var rdata dto.OrderHistory
 
 		err := rows.Scan(
-			&history.ID,
-			&history.OrderDate,
-
-			&history.MovieName,
-			&history.MovieCategory,
-
-			&history.CinemaName,
-			&history.CinemaLogo,
-
-			&history.ShowDate,
-			&history.ShowTime,
-
-			&history.Seats,
-			&history.SeatCount,
-
-			&history.PaymentReference,
-			&history.TotalPayment,
-
-			&history.PaymentStatus,
-			&history.TicketStatus,
-
-			&history.ExpiredAt,
+			&rdata.ID,
+			&rdata.OrderDate,
+			&rdata.MovieName,
+			&rdata.MovieCategory,
+			&rdata.CinemaName,
+			&rdata.CinemaLogo,
+			&rdata.ShowDate,
+			&rdata.ShowTime,
+			&rdata.Seats,
+			&rdata.SeatCount,
+			&rdata.PaymentReference,
+			&rdata.TotalPayment,
+			&rdata.PaymentStatus,
+			&rdata.TicketStatus,
+			&rdata.ExpiredAt,
 		)
+
 		if err != nil {
 			return nil, 0, err
 		}
 
-		histories = append(histories, history)
+		results = append(results, rdata)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, 0, err
-	}
-
-	return histories, totalData, nil
+	return results, total, nil
 }

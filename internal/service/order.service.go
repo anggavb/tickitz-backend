@@ -43,17 +43,15 @@ func (s *OrderService) GetOrderHistory(
 		return nil, err
 	}
 
-	totalPage := int64(math.Ceil(
-		float64(totalData) / float64(limit),
-	))
+	totalPage := int(math.Ceil(float64(totalData) / float64(limit)))
 
 	return &dto.OrderHistoryResponse{
 		Data: data,
 		Meta: dto.Meta{
 			Page:      page,
 			Limit:     limit,
-			TotalData: totalData,
-			TotalPage: totalPage,
+			TotalData: int64(totalData),
+			TotalPage: int64(totalPage),
 		},
 	}, nil
 }

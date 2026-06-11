@@ -26,11 +26,11 @@ type OrderHistory struct {
 
 	ExpiredAt time.Time `json:"expired_at"`
 }
+
 type OrderHistoryResponse struct {
 	Data []OrderHistory `json:"data"`
 	Meta Meta           `json:"meta"`
 }
-
 type OrderHistoryRequest struct {
 	Page  int `form:"page" binding:"omitempty,min=1"`
 	Limit int `form:"limit" binding:"omitempty,min=1,max=100"`
