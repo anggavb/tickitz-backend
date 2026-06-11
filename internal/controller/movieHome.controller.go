@@ -173,6 +173,7 @@ func (c *MovieHomeController) GetShowtimes(ctx *gin.Context) {
 //	@Produce		json
 //	@Param	category	query		[]string	false	"Movie Categories"
 //	@Param	name		query		string		false	"Movie Name"
+//	@Param	showToday	query		bool		false	"Show only movies playing today"
 //	@Param	page		query		int			false	"Page Number"
 //	@Param	limit		query		int			false	"Items Per Page"
 //	@Success		200			{object}	dto.SuccessResponse
@@ -187,7 +188,6 @@ func (c *MovieHomeController) GetMoviesWithFilter(ctx *gin.Context) {
 			"[MovieHomeController][GetMoviesWithFilter] bind query error: %v",
 			err,
 		)
-
 		response.Error(
 			ctx,
 			http.StatusBadRequest,
@@ -218,6 +218,43 @@ func (c *MovieHomeController) GetMoviesWithFilter(ctx *gin.Context) {
 		ctx,
 		http.StatusOK,
 		"success to get movies",
+		data,
+	)
+}
+
+// GetUpcomingMovies godoc
+//
+//	@Summary		Get upcoming movies
+//	@Description	Get list of upcoming movies (release date greater than current date).
+//	@Tags			Movies
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	dto.SuccessResponse
+//	@Failure		500	{object}	dto.ErrorResponse
+//	@Router			/movies/upcoming [get]
+func (c *MovieHomeController) GetUpcomingMovies(ctx *gin.Context) {
+
+	data, err := c.movieHomeService.GetUpcomingMovies(
+		ctx.Request.Context(),
+	)
+	if err != nil {
+		log.Printf(
+			"[MovieHomeController][GetUpcomingMovies] service error: %v",
+			err,
+		)
+
+		response.Error(
+			ctx,
+			http.StatusInternalServerError,
+			err.Error(),
+		)
+		return
+	}
+
+	response.Success(
+		ctx,
+		http.StatusOK,
+		"success to get upcoming movies",
 		data,
 	)
 }

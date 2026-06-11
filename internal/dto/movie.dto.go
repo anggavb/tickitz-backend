@@ -54,6 +54,7 @@ type MovieParamsRequest struct {
 	Name       *string  `form:"name"`
 	Page       int      `form:"page"`
 	Limit      int      `form:"limit"`
+	ShowToday  bool     `form:"showToday"`
 }
 
 type MoviePreviewResponse struct {

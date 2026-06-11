@@ -7,6 +7,7 @@ import (
 
 	"github.com/tickitz-backend/internal/dto"
 	"github.com/tickitz-backend/internal/errs"
+	"github.com/tickitz-backend/internal/model"
 
 	"github.com/tickitz-backend/internal/repository"
 )
@@ -94,13 +95,12 @@ func (s *MovieHomeService) GetAllMovies(
 	}
 
 	if req.Limit <= 0 {
-		req.Limit = 10
+		req.Limit = 12
 	}
 
 	movies, totalData, err := s.movieHomeRepository.GetAllMoviesByFilter(ctx, req)
 	if err != nil {
 		log.Printf("[MovieHomeService][GetAllMovies] repository error: %v", err)
-
 		return nil, errs.ErrGetMovies
 	}
 
@@ -119,4 +119,18 @@ func (s *MovieHomeService) GetAllMovies(
 	}
 
 	return result, nil
+}
+
+func (s *MovieHomeService) GetUpcomingMovies(
+	ctx context.Context,
+) ([]model.MoviePreviewResponse, error) {
+
+	movies, err := s.movieHomeRepository.GetUpcomingMovies(ctx)
+	if err != nil {
+		log.Printf("[MovieHomeService][GetUpcomingMovies] repository error: %v", err)
+
+		return nil, errs.ErrGetMovies
+	}
+
+	return movies, nil
 }

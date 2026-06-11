@@ -74,7 +74,6 @@ func (r *MovieHomeRepository) FindBySlug(ctx context.Context, slug string) (dto.
 	return movie, nil
 }
 
-// GetAllMoviesByFilter
 func (r *MovieHomeRepository) GetAllMoviesByFilter(
 	ctx context.Context,
 	req dto.MovieParamsRequest,
@@ -127,9 +126,19 @@ func (r *MovieHomeRepository) GetAllMoviesByFilter(
 		idx++
 	}
 
-	// ========================
-	// COUNT TOTAL DATA
-	// ========================
+	if req.ShowToday {
+		conditions = append(
+			conditions,
+			`
+			AND EXISTS (
+				SELECT 1
+				FROM movie_cinemas mcnm
+				WHERE mcnm.movie_id = m.id
+				AND mcnm.show_date = CURRENT_DATE
+			)
+			`,
+		)
+	}
 
 	var countSb strings.Builder
 
@@ -202,6 +211,7 @@ func (r *MovieHomeRepository) GetAllMoviesByFilter(
 		sb.String(),
 		queryArgs...,
 	)
+
 	if err != nil {
 		log.Printf("[MovieHomeRepository][GetAllMoviesByFilter] query error: %v", err)
 		return nil, 0, err
@@ -235,4 +245,65 @@ func (r *MovieHomeRepository) GetAllMoviesByFilter(
 	}
 
 	return movies, totalData, nil
+}
+
+func (r *MovieHomeRepository) GetUpcomingMovies(
+	ctx context.Context,
+) ([]model.MoviePreviewResponse, error) {
+
+	query := `
+		SELECT
+			m.id,
+			m.name,
+			m.slug,
+			m.image,
+			m.release_date,
+			ARRAY_AGG(DISTINCT c.name) AS categories
+		FROM movies m
+		JOIN movie_categories mc ON mc.movie_id = m.id
+		JOIN categories c ON c.id = mc.category_id
+		WHERE m.release_date > NOW()
+		GROUP BY
+			m.id,
+			m.name,
+			m.slug,
+			m.image,
+			m.release_date
+		ORDER BY m.release_date ASC
+		LIMIT 10
+	`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		log.Printf("[MovieHomeRepository][GetUpcomingMovies] query error: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var movies []model.MoviePreviewResponse
+
+	for rows.Next() {
+		var movie model.MoviePreviewResponse
+
+		if err := rows.Scan(
+			&movie.ID,
+			&movie.Name,
+			&movie.Slug,
+			&movie.Image,
+			&movie.ReleaseDate,
+			&movie.Categories,
+		); err != nil {
+			log.Printf("[MovieHomeRepository][GetUpcomingMovies] scan error: %v", err)
+			return nil, err
+		}
+
+		movies = append(movies, movie)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Printf("[MovieHomeRepository][GetUpcomingMovies] rows error: %v", err)
+		return nil, err
+	}
+
+	return movies, nil
 }
