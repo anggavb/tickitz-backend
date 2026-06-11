@@ -18,11 +18,7 @@ func NewOrderService(orderRepo *repository.OrderRepository) *OrderService {
 	}
 }
 
-func (s *OrderService) CreatePendingOrder(
-	ctx context.Context,
-	userID int64,
-	movieCinemaID int64,
-) (dto.CreatePendingOrderResponse, error) {
+func (s *OrderService) CreatePendingOrder(ctx context.Context, userID int64, movieCinemaID int64) (dto.CreatePendingOrderResponse, error) {
 	return s.orderRepo.CreatePendingOrder(ctx, userID, movieCinemaID)
 }
 
