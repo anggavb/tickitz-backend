@@ -173,22 +173,7 @@ func (c *MovieHomeController) GetShowtimes(ctx *gin.Context) {
 //	@Produce		json
 //	@Param	category	query		[]string	false	"Movie Categories"
 //	@Param	name		query		string		false	"Movie Name"
-//	@Param	page		query		int			false	"Page Number"
-//	@Param	limit		query		int			false	"Items Per Page"
-//	@Success		200			{object}	dto.SuccessResponse
-//	@Failure		400			{object}	dto.ErrorResponse
-//	@Failure		500			{object}	dto.ErrorResponse
-//	@Router			/movies [get]
-//
-// GetMoviesWithFilter godoc
-//
-//	@Summary		Get movies with filter and pagination
-//	@Description	Get list of movies with optional filters by category, name, and pagination.
-//	@Tags			Movies
-//	@Accept			json
-//	@Produce		json
-//	@Param	category	query		[]string	false	"Movie Categories"
-//	@Param	name		query		string		false	"Movie Name"
+//	@Param	showToday	query		bool		false	"Show only movies playing today"
 //	@Param	page		query		int			false	"Page Number"
 //	@Param	limit		query		int			false	"Items Per Page"
 //	@Success		200			{object}	dto.SuccessResponse
@@ -203,11 +188,6 @@ func (c *MovieHomeController) GetMoviesWithFilter(ctx *gin.Context) {
 			"[MovieHomeController][GetMoviesWithFilter] bind query error: %v",
 			err,
 		)
-		log.Printf(
-			"[MovieHomeController][GetMoviesWithFilter] bind query error: %v",
-			err,
-		)
-
 		response.Error(
 			ctx,
 			http.StatusBadRequest,

@@ -102,7 +102,8 @@ func (r *MovieHomeRepository) GetAllMoviesByFilter(
 			idx++
 		}
 
-		conditions = append(conditions,
+		conditions = append(
+			conditions,
 			fmt.Sprintf(`
 				AND EXISTS (
 					SELECT 1
@@ -125,9 +126,19 @@ func (r *MovieHomeRepository) GetAllMoviesByFilter(
 		idx++
 	}
 
-	// ========================
-	// COUNT TOTAL DATA
-	// ========================
+	if req.ShowToday {
+		conditions = append(
+			conditions,
+			`
+			AND EXISTS (
+				SELECT 1
+				FROM movie_cinemas mcnm
+				WHERE mcnm.movie_id = m.id
+				AND mcnm.show_date = CURRENT_DATE
+			)
+			`,
+		)
+	}
 
 	var countSb strings.Builder
 

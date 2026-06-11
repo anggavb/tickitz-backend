@@ -95,7 +95,7 @@ func (s *MovieHomeService) GetAllMovies(
 	}
 
 	if req.Limit <= 0 {
-		req.Limit = 10
+		req.Limit = 12
 	}
 
 	movies, totalData, err := s.movieHomeRepository.GetAllMoviesByFilter(ctx, req)
