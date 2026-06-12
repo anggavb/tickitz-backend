@@ -16,4 +16,5 @@ func RegisterProfileRouter(router *gin.Engine, db *pgxpool.Pool, authCache *repo
 	profileController := controller.NewProfileController(profileService)
 
 	profileRoute.GET("", middleware.VerifyToken(authCache), profileController.GetProfileById)
+	profileRoute.PATCH("/update", middleware.VerifyToken(authCache), profileController.UpdateUserProfile)
 }
