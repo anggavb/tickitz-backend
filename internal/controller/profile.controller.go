@@ -3,9 +3,11 @@ package controller
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tickitz-backend/internal/dto"
+	"github.com/tickitz-backend/internal/jwttoken"
 	"github.com/tickitz-backend/internal/response"
 	"github.com/tickitz-backend/internal/service"
 )
@@ -30,8 +32,13 @@ func NewProfileController(profileService *service.ProfileService) *ProfileContro
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /profile [get]
 func (c *ProfileController) GetProfileById(ctx *gin.Context) {
-	// TODO: ambil dari claims
-	var userID int // dummy
+	claims, ok := jwttoken.GetClaims(ctx)
+	if !ok {
+		response.Error(ctx, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	log.Println(claims.UserId)
+	userID := claims.UserId
 
 	profile, err := c.ProfileService.GetUserProfile(
 		ctx.Request.Context(),
@@ -69,7 +76,20 @@ func (c *ProfileController) GetProfileById(ctx *gin.Context) {
 // @Router /profile [put]
 func (c *ProfileController) UpdateUserProfile(ctx *gin.Context) {
 	// TODO: ambil dari JWT claims
-	userID := 2
+	claims, ok := jwttoken.GetClaims(ctx)
+	if !ok {
+		response.Error(ctx, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	userID, err := strconv.Atoi(claims.ID)
+	if err != nil {
+		log.Print(claims.ID)
+		log.Printf("[UpdateUserProfile] strconv.Atoi error: %v\n", err)
+
+		response.Error(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	var req dto.UpdateProfileRequest
 
