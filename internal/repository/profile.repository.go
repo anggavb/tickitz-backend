@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -22,9 +23,11 @@ func NewProfileRepository(db *pgxpool.Pool) *ProfileRepository {
 }
 
 func (r *ProfileRepository) GetProfile(ctx context.Context, id int) (model.UserProfile, error) {
-	sql := `SELECT COALESCE(u.firstname, '') AS first_name, COALESCE(u.lastname, '') AS last_name, COALESCE(u.phone_number, '') AS phone, COALESCE(u.photo, ''), l.name AS loyalty_tier, u.point AS point FROM users u JOIN loyalty_tiers l ON l.id = u.loyalty_tier_id WHERE u.id = $1`
+	log.Println(id)
+	sql := `SELECT COALESCE(u.firstname, '') AS first_name, COALESCE(u.lastname, '') AS last_name, COALESCE(u.phone_number, '') AS phone, COALESCE(u.photo, ''), COALESCE(l.name, '') AS loyalty_tier, u.point AS point FROM users u LEFT JOIN loyalty_tiers l ON l.id = u.loyalty_tier_id WHERE u.id = $1`
 	var profile model.UserProfile
 	if err := r.db.QueryRow(ctx, sql, id).Scan(&profile.FirstName, &profile.LastName, &profile.Phone, &profile.Photo, &profile.LoyaltyTier, &profile.Point); err != nil {
+		log.Printf("[GetProfile] GetProfile error: %v\n", err)
 		return model.UserProfile{}, err
 	}
 	return profile, nil
