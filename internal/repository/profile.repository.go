@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -22,9 +23,10 @@ func NewProfileRepository(db *pgxpool.Pool) *ProfileRepository {
 }
 
 func (r *ProfileRepository) GetProfile(ctx context.Context, id int) (model.UserProfile, error) {
-	sql := `SELECT COALESCE(u.firstname, '') AS first_name, COALESCE(u.lastname, '') AS last_name, COALESCE(u.phone_number, '') AS phone, COALESCE(u.photo, ''), l.name AS loyalty_tier, u.point AS point FROM users u JOIN loyalty_tiers l ON l.id = u.loyalty_tier_id WHERE u.id = $1`
+	sql := `SELECT COALESCE(u.firstname, '') AS first_name, COALESCE(u.lastname, '') AS last_name, COALESCE(u.phone_number, '') AS phone, COALESCE(u.photo, ''), COALESCE(l.name, '') AS loyalty_tier, u.point AS point FROM users u LEFT JOIN loyalty_tiers l ON l.id = u.loyalty_tier_id WHERE u.id = $1`
 	var profile model.UserProfile
 	if err := r.db.QueryRow(ctx, sql, id).Scan(&profile.FirstName, &profile.LastName, &profile.Phone, &profile.Photo, &profile.LoyaltyTier, &profile.Point); err != nil {
+		log.Printf("[GetProfile] GetProfile error: %v\n", err)
 		return model.UserProfile{}, err
 	}
 	return profile, nil
@@ -37,17 +39,17 @@ func (r *ProfileRepository) UpdateProfile(ctx context.Context, req dto.UpdatePro
 	sets := make([]string, 0)
 
 	if req.FirstName != nil {
-		sets = append(sets, fmt.Sprintf(`first_name = $%d`, idx))
+		sets = append(sets, fmt.Sprintf(`firstname = $%d`, idx))
 		args = append(args, *req.FirstName)
 		idx++
 	}
 	if req.LastName != nil {
-		sets = append(sets, fmt.Sprintf(`last_name = $%d`, idx))
+		sets = append(sets, fmt.Sprintf(`lastname = $%d`, idx))
 		args = append(args, *req.LastName)
 		idx++
 	}
 	if req.Phone != nil {
-		sets = append(sets, fmt.Sprintf(`phone = $%d`, idx))
+		sets = append(sets, fmt.Sprintf(`phone_number = $%d`, idx))
 		args = append(args, *req.Phone)
 		idx++
 	}
