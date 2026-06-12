@@ -39,17 +39,17 @@ func (r *ProfileRepository) UpdateProfile(ctx context.Context, req dto.UpdatePro
 	sets := make([]string, 0)
 
 	if req.FirstName != nil {
-		sets = append(sets, fmt.Sprintf(`first_name = $%d`, idx))
+		sets = append(sets, fmt.Sprintf(`firstname = $%d`, idx))
 		args = append(args, *req.FirstName)
 		idx++
 	}
 	if req.LastName != nil {
-		sets = append(sets, fmt.Sprintf(`last_name = $%d`, idx))
+		sets = append(sets, fmt.Sprintf(`lastname = $%d`, idx))
 		args = append(args, *req.LastName)
 		idx++
 	}
 	if req.Phone != nil {
-		sets = append(sets, fmt.Sprintf(`phone = $%d`, idx))
+		sets = append(sets, fmt.Sprintf(`phone_number = $%d`, idx))
 		args = append(args, *req.Phone)
 		idx++
 	}

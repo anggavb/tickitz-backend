@@ -3,7 +3,6 @@ package controller
 import (
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tickitz-backend/internal/dto"
@@ -81,14 +80,7 @@ func (c *ProfileController) UpdateUserProfile(ctx *gin.Context) {
 		return
 	}
 
-	userID, err := strconv.Atoi(claims.ID)
-	if err != nil {
-		log.Print(claims.ID)
-		log.Printf("[UpdateUserProfile] strconv.Atoi error: %v\n", err)
-
-		response.Error(ctx, http.StatusInternalServerError, err.Error())
-		return
-	}
+	userID := claims.UserId
 
 	var req dto.UpdateProfileRequest
 
