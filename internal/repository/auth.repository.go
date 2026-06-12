@@ -160,3 +160,12 @@ func (r *AuthRepository) UpdatePassword(ctx context.Context, newPassword string,
 	}
 	return nil
 }
+
+func (r *AuthRepository) GetUserIDByEmail(ctx context.Context, email string) (int64, error) {
+	sql := `SELECT id from users WHERE email = $1`
+	var userID int64
+	if err := r.db.QueryRow(ctx, sql, email).Scan(&userID); err != nil {
+		return 0, err
+	}
+	return userID, nil
+}

@@ -379,3 +379,75 @@ func (c *AuthController) ChangeUserPassword(ctx *gin.Context) {
 
 	response.Success(ctx, http.StatusOK, "password updated", nil)
 }
+
+func (c *AuthController) ForgotPassword(ctx *gin.Context) {
+	var user dto.ForgotPasswordRequest
+	if err := ctx.ShouldBindJSON(&user); err != nil {
+		log.Printf("[ForgotPassword] BindJSON error: %v\n", err)
+		if strings.Contains(err.Error(), "Email") &&
+			strings.Contains(err.Error(), "email") {
+			response.Error(
+				ctx,
+				http.StatusBadRequest,
+				"Email format is invalid",
+			)
+			return
+		}
+		response.Error(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err := c.authService.ForgotPassword(ctx.Request.Context(), user.Email); err != nil {
+		log.Printf("[ForgotPasswordService] error: %v\n", err)
+		response.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	response.Success(ctx, http.StatusOK, "success to sent a link to email", nil)
+}
+func (c *AuthController) ResetPasswordRequest(ctx *gin.Context) {
+	var reqBody dto.ResetPasswordBody
+	var reqParam dto.ResetPasswordQuery
+
+	if err := ctx.ShouldBindJSON(&reqBody); err != nil {
+		log.Printf("[ResetPassword] JSON bind error: %v\n", err)
+
+		if strings.Contains(err.Error(), "NewPassword") {
+			if strings.Contains(err.Error(), "required") {
+				response.Error(ctx, http.StatusBadRequest, "new_password is required")
+				return
+			}
+			if strings.Contains(err.Error(), "min") {
+				response.Error(ctx, http.StatusBadRequest, "Password must be at least 8 characters")
+				return
+			}
+		}
+
+		response.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := ctx.ShouldBindQuery(&reqParam); err != nil {
+		log.Println("TOKEN RAW:", ctx.Query("token"))
+		log.Printf("[ResetPassword] Query bind error: %v\n", err)
+
+		if strings.Contains(err.Error(), "Token") {
+			response.Error(ctx, http.StatusBadRequest, "token is required")
+			return
+		}
+
+		response.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := c.authService.ResetPassword(
+		ctx.Request.Context(),
+		reqParam.Token,
+		reqBody.NewPassword,
+	); err != nil {
+		log.Printf("[ResetPassword] error: %v\n", err)
+		response.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	response.Success(ctx, http.StatusOK, "Password reset successful", nil)
+}

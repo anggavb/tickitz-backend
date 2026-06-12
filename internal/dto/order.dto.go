@@ -35,3 +35,38 @@ type OrderHistoryRequest struct {
 	Page  int `form:"page" binding:"omitempty,min=1"`
 	Limit int `form:"limit" binding:"omitempty,min=1,max=100"`
 }
+
+type CreatePendingOrderRequest struct {
+	MovieCinemaID int64 `json:"movie_cinema_id" binding:"required,min=1"`
+}
+
+type PendingOrderSchedule struct {
+	Date       string `json:"date"`
+	Time       string `json:"time"`
+	ShowtimeID int64  `json:"showtime_id"`
+}
+
+type PendingOrderMovie struct {
+	ID     int64  `json:"id"`
+	Title  string `json:"title"`
+	Poster string `json:"poster"`
+}
+
+type PendingOrderCinema struct {
+	ID       int64  `json:"id"`
+	Name     string `json:"name"`
+	Logo     string `json:"logo"`
+	Location string `json:"location"`
+}
+
+type CreatePendingOrderResponse struct {
+	ID            string               `json:"id"`
+	MovieCinemaID int64                `json:"movie_cinema_id"`
+	Status        string               `json:"status"`
+	TotalPrice    int                  `json:"total_price"`
+	ExpiredAt     time.Time            `json:"expired_at"`
+	Reused        bool                 `json:"reused"`
+	Movie         PendingOrderMovie    `json:"movie"`
+	Cinema        PendingOrderCinema   `json:"cinema"`
+	Schedule      PendingOrderSchedule `json:"schedule"`
+}

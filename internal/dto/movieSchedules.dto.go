@@ -31,19 +31,27 @@ type MovieDetailResponse struct {
 }
 
 type MovieScheduleRow struct {
-	Location   string
-	CinemaName string
-	ShowDate   time.Time
-	Showtime   time.Time
-	Price      int
+	MovieCinemaID int64
+	CinemaID      int64
+	Location      string
+	CinemaName    string
+	CinemaLogo    string
+	ShowDate      time.Time
+	Showtime      time.Time
+	ShowtimeID    int64
+	Price         int
 }
 
 type MovieScheduleResponse struct {
-	Location   string `json:"location"`
-	CinemaName string `json:"cinema_name"`
-	ShowDate   string `json:"show_date"`
-	Showtime   string `json:"showtime"`
-	Price      int    `json:"price"`
+	MovieCinemaID int64  `json:"movie_cinema_id"`
+	CinemaID      int64  `json:"cinema_id"`
+	Location      string `json:"location"`
+	CinemaName    string `json:"cinema_name"`
+	CinemaLogo    string `json:"cinema_logo"`
+	ShowDate      string `json:"show_date"`
+	Showtime      string `json:"showtime"`
+	ShowtimeID    int64  `json:"showtime_id"`
+	Price         int    `json:"price"`
 }
 
 type MovieLocationRow struct {
@@ -52,4 +60,16 @@ type MovieLocationRow struct {
 
 type MovieShowtimeRow struct {
 	Showtime string `json:"showtime"`
+}
+
+type MovieScheduleQuery struct {
+	Date     string `form:"date"`
+	Time     string `form:"time"`
+	Location string `form:"location"`
+}
+
+type MovieScheduleOptionsResponse struct {
+	Dates     []string           `json:"dates"`
+	Showtimes []MovieShowtimeRow `json:"showtimes"`
+	Locations []MovieLocationRow `json:"locations"`
 }

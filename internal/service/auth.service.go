@@ -4,7 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/tickitz-backend/internal/dto"
@@ -244,5 +247,82 @@ func (s *AuthService) ChangeUserPassword(ctx context.Context, newPassword string
 		return err
 	}
 
+	return nil
+}
+
+func (s *AuthService) ForgotPassword(ctx context.Context, email string) error {
+
+	userID, err := s.authRepo.GetUserIDByEmail(ctx, email)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	clientURL := os.Getenv("CLIENT_URL")
+
+	rawToken := pkg.GenerateRandomToken(32)
+
+	expiresAt := time.Now().Add(30 * time.Minute)
+
+	// simpan ke redis
+	err = s.authCache.StoreTokenForgotPassword(
+		ctx,
+		rawToken,
+		int(userID),
+		expiresAt,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	resetURL := fmt.Sprintf(
+		"%s/reset-password?token=%s",
+		clientURL,
+		rawToken,
+	)
+
+	err = pkg.SendMail(
+		[]string{email},
+		"TICKITZ RESET PASSWORD",
+		resetURL,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *AuthService) ResetPassword(ctx context.Context, token, password string) error {
+	userRedisKey := fmt.Sprintf("tickitz:auth:reset-password:%s", token)
+	exists, err := s.authCache.IsFogotPasswordKeyActive(ctx, userRedisKey)
+	if err != nil {
+		log.Printf("[ResetPassword] IsFogotPasswordKeyActive error: %v\n", err)
+		return err
+	}
+	if !exists {
+		log.Printf("[ResetPassword] IsExistToken error: %v\n%s", err, userRedisKey)
+		return errors.New("expired token")
+	}
+	value, err := s.authCache.GetValueAndDelete(ctx, userRedisKey)
+	if err != nil {
+		log.Printf("[ResetPassword] GetValueAndDelete error: %v\n", err)
+		return err
+	}
+	var hc pkg.HashConfig
+	hc.OwaspRecomendedHashConfig()
+	hashedNewPassword := hc.Hash(password)
+
+	userID, err := strconv.Atoi(value)
+	if err != nil {
+		log.Printf("[ResetPassword] strconv atoi error: %v\n", err)
+		return err
+	}
+
+	if err := s.authRepo.UpdatePassword(ctx, hashedNewPassword, userID); err != nil {
+		log.Printf("[ResetPassword] UpdatePassword error: %v\n", err)
+		return err
+	}
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -52,4 +53,42 @@ func (r *AuthCacheRepository) tokenKey(userID int, tokenHash string) string {
 	}
 
 	return r.prefix + ":" + key
+}
+
+func (r *AuthCacheRepository) StoreTokenForgotPassword(
+	ctx context.Context,
+	token string,
+	userID int,
+	expiresAt time.Time,
+) error {
+
+	ttl := time.Until(expiresAt)
+	if ttl <= 0 {
+		return errors.New("token already expired")
+	}
+
+	key := fmt.Sprintf("%s:auth:reset-password:%s", r.prefix, token)
+	log.Println(key)
+	err := r.rdb.Set(ctx, key, userID, ttl).Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *AuthCacheRepository) IsFogotPasswordKeyActive(ctx context.Context, key string) (bool, error) {
+	exists, err := r.rdb.Exists(ctx, key).Result()
+	if err != nil {
+		return false, err
+	}
+	return exists == 1, nil
+}
+
+func (r *AuthCacheRepository) GetValueAndDelete(ctx context.Context, key string) (string, error) {
+	val, err := r.rdb.GetDel(ctx, key).Result()
+	if err != nil {
+		return "", err
+	}
+	return val, nil
 }

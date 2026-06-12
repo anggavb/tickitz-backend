@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/tickitz-backend/internal/dto"
+	"github.com/tickitz-backend/internal/errs"
 	"github.com/tickitz-backend/internal/response"
 	"github.com/tickitz-backend/internal/service"
 )
@@ -76,6 +77,9 @@ func (c *MovieHomeController) GetMovieBySlug(ctx *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			slug	path		string	true	"Movie Slug"
+//	@Param			date	query		string	false	"Show Date YYYY-MM-DD"
+//	@Param			time	query		string	false	"Showtime HH:MM"
+//	@Param			location	query		string	false	"Location Name"
 //	@Success		200		{object}	dto.SuccessResponse	"Movie schedules retrieved successfully"
 //	@Failure		400		{object}	dto.ErrorResponse		"Movie slug is required"
 //	@Failure		404		{object}	dto.ErrorResponse		"Movie not found"
@@ -92,8 +96,25 @@ func (c *MovieHomeController) GetMovieSchedulesBySlug(ctx *gin.Context) {
 		return
 	}
 
-	schedules, err := c.movieHomeService.GetMovieSchedulesBySlug(ctx.Request.Context(), slug)
+	var filter dto.MovieScheduleQuery
+	if err := ctx.ShouldBindQuery(&filter); err != nil {
+		ctx.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Success: false,
+			Message: "invalid schedule filter",
+		})
+		return
+	}
+
+	schedules, err := c.movieHomeService.GetMovieSchedulesBySlug(ctx.Request.Context(), slug, filter)
 	if err != nil {
+		if errors.Is(err, errs.ErrInvalidScheduleFilter) {
+			ctx.JSON(http.StatusBadRequest, dto.ErrorResponse{
+				Success: false,
+				Message: "schedule date or time has passed",
+			})
+			return
+		}
+
 		if errors.Is(err, pgx.ErrNoRows) {
 			ctx.JSON(http.StatusNotFound, dto.ErrorResponse{
 				Success: false,
@@ -113,6 +134,54 @@ func (c *MovieHomeController) GetMovieSchedulesBySlug(ctx *gin.Context) {
 		Success: true,
 		Message: "movie schedules retrieved successfully",
 		Data:    schedules,
+	})
+}
+
+// GetMovieScheduleOptionsBySlug godoc
+//
+//	@Summary		Get movie schedule filter options by slug
+//	@Description	Get available dates, showtimes, and locations for a movie using movie slug.
+//	@Tags			Movies
+//	@Accept			json
+//	@Produce		json
+//	@Param			slug	path		string	true	"Movie Slug"
+//	@Success		200		{object}	dto.SuccessResponse	"Movie schedule options retrieved successfully"
+//	@Failure		400		{object}	dto.ErrorResponse		"Movie slug is required"
+//	@Failure		404		{object}	dto.ErrorResponse		"Movie not found"
+//	@Failure		500		{object}	dto.ErrorResponse		"Failed to get movie schedule options"
+//	@Router			/movies/{slug}/schedule-options [get]
+func (c *MovieHomeController) GetMovieScheduleOptionsBySlug(ctx *gin.Context) {
+	slug := ctx.Param("slug")
+
+	if slug == "" {
+		ctx.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Success: false,
+			Message: "movie slug is required",
+		})
+		return
+	}
+
+	options, err := c.movieHomeService.GetMovieScheduleOptionsBySlug(ctx.Request.Context(), slug)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			ctx.JSON(http.StatusNotFound, dto.ErrorResponse{
+				Success: false,
+				Message: "movie not found",
+			})
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Success: false,
+			Message: "failed to get movie schedule options",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.SuccessResponse{
+		Success: true,
+		Message: "movie schedule options retrieved successfully",
+		Data:    options,
 	})
 }
 

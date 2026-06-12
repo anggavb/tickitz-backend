@@ -17,5 +17,6 @@ var (
 
 	ErrNothingToUpdate = errors.New("nothing no update")
 
-	ErrGetMovies = errors.New("failed to get movies")
+	ErrGetMovies             = errors.New("failed to get movies")
+	ErrInvalidScheduleFilter = errors.New("schedule date or time has passed")
 )

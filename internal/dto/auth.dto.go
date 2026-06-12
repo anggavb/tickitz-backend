@@ -29,3 +29,15 @@ type LoginResponse struct {
 type ChangePasswordRequest struct {
 	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+type ResetPasswordBody struct {
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+type ResetPasswordQuery struct {
+	Token string `form:"token" binding:"required"`
+}
