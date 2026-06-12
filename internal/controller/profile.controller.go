@@ -37,7 +37,6 @@ func (c *ProfileController) GetProfileById(ctx *gin.Context) {
 		response.Error(ctx, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
-	log.Println(claims.UserId)
 	userID := claims.UserId
 
 	profile, err := c.ProfileService.GetUserProfile(
