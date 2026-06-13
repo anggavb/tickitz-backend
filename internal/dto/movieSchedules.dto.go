@@ -62,6 +62,20 @@ type MovieShowtimeRow struct {
 	Showtime string `json:"showtime"`
 }
 
+type CinemaResponse struct {
+	ID       int64  `json:"id"`
+	Name     string `json:"name"`
+	Location string `json:"location,omitempty"`
+}
+
+type AdminMovieShowtimesRequest struct {
+	CinemaID  int64    `json:"cinema_id" binding:"required,min=1"`
+	StartDate string   `json:"start_date" binding:"required"`
+	EndDate   string   `json:"end_date" binding:"required"`
+	Times     []string `json:"times" binding:"required,min=1,dive,required"`
+	Price     int      `json:"price,omitempty"`
+}
+
 type MovieScheduleQuery struct {
 	Date     string `form:"date"`
 	Time     string `form:"time"`

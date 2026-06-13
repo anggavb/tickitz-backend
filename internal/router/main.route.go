@@ -21,6 +21,7 @@ func InitRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Client) {
 
 	RegisterAuthRouter(router, db, authCache)
 	RegisterMovieRouter(router, db, authCache)
+	RegisterDashboardRouter(router, db)
 	RegisterProfileRouter(router, db, authCache)
 	HomeMovieRouter(router, db)
 	RegisterSeatRouter(router, db)

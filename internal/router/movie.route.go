@@ -13,8 +13,14 @@ func RegisterMovieRouter(router *gin.Engine, db *pgxpool.Pool, authCache *reposi
 	adminRouter := router.Group("/admin", middleware.VerifyToken(authCache), middleware.AuthorizeRoles("admin"))
 	movieRouter := adminRouter.Group("/movies")
 	movieRepo := repository.NewMovieRepository(db)
-	movieService := service.NewMovieService(movieRepo)
+	movieScheduleRepo := repository.NewMovieScheduleRepository(db)
+	movieService := service.NewMovieService(movieRepo, movieScheduleRepo)
 	movieController := controller.NewMovieController(movieService)
+
+	movieRouter.GET(":id/showtimes", movieController.GetMovieShowtimes)
+	movieRouter.POST(":id/showtimes", movieController.AddMovieShowtimes)
+
+	adminRouter.GET("/cinemas", movieController.GetCinemas)
 
 	movieRouter.GET("", movieController.List)
 	movieRouter.GET("months", movieController.ListReleaseMonths)

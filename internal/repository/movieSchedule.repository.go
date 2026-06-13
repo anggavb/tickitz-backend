@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tickitz-backend/internal/dto"
 )
@@ -271,4 +272,189 @@ func (r *MovieScheduleRepository) FindTime(
 		return nil, fmt.Errorf("FindTime rows: %w", err)
 	}
 	return showtimes, nil
+}
+
+func (r *MovieScheduleRepository) FindAllCinemas(ctx context.Context) ([]dto.CinemaResponse, error) {
+	query := `
+        SELECT c.id, c.name, COALESCE(l.name, '') AS location
+        FROM cinemas c
+        LEFT JOIN locations l ON l.id = c.location_id
+        ORDER BY c.name;
+    `
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("FindAllCinemas query: %w", err)
+	}
+	defer rows.Close()
+
+	cinemas := make([]dto.CinemaResponse, 0)
+	for rows.Next() {
+		var cinema dto.CinemaResponse
+		if err := rows.Scan(&cinema.ID, &cinema.Name, &cinema.Location); err != nil {
+			return nil, fmt.Errorf("FindAllCinemas scan: %w", err)
+		}
+		cinemas = append(cinemas, cinema)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("FindAllCinemas rows: %w", err)
+	}
+
+	return cinemas, nil
+}
+
+func (r *MovieScheduleRepository) FindShowtimesByMovieID(ctx context.Context, movieID int64) ([]dto.MovieScheduleResponse, error) {
+	query := `
+        SELECT
+            mc.id AS movie_cinema_id,
+            c.id AS cinema_id,
+            l.name AS location,
+            c.name AS cinema_name,
+            COALESCE(c.logo, '') AS cinema_logo,
+            mc.show_date,
+            s.showtime,
+            s.id AS showtime_id,
+            mc.price
+        FROM movie_cinemas mc
+        JOIN cinemas c ON c.id = mc.cinema_id
+        LEFT JOIN locations l ON l.id = c.location_id
+        JOIN showtimes s ON s.id = mc.showtime_id
+        WHERE mc.movie_id = $1
+        ORDER BY l.name, c.name, mc.show_date, s.showtime;
+    `
+
+	rows, err := r.db.Query(ctx, query, movieID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	schedules := make([]dto.MovieScheduleResponse, 0)
+	for rows.Next() {
+		var row dto.MovieScheduleRow
+		if err := rows.Scan(
+			&row.MovieCinemaID,
+			&row.CinemaID,
+			&row.Location,
+			&row.CinemaName,
+			&row.CinemaLogo,
+			&row.ShowDate,
+			&row.Showtime,
+			&row.ShowtimeID,
+			&row.Price,
+		); err != nil {
+			return nil, err
+		}
+		schedules = append(schedules, dto.MovieScheduleResponse{
+			MovieCinemaID: row.MovieCinemaID,
+			CinemaID:      row.CinemaID,
+			Location:      row.Location,
+			CinemaName:    row.CinemaName,
+			CinemaLogo:    row.CinemaLogo,
+			ShowDate:      row.ShowDate.Format("2006-01-02"),
+			Showtime:      row.Showtime.Format("15:04"),
+			ShowtimeID:    row.ShowtimeID,
+			Price:         row.Price,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return schedules, nil
+}
+
+func (r *MovieScheduleRepository) findShowtimeIDsByTimes(ctx context.Context, times []string) (map[string]int64, error) {
+	query := `
+        SELECT id, to_char(showtime, 'HH24:MI') AS showtime
+        FROM showtimes
+        WHERE to_char(showtime, 'HH24:MI') = ANY($1::text[])
+    `
+
+	rows, err := r.db.Query(ctx, query, times)
+	if err != nil {
+		return nil, fmt.Errorf("findShowtimeIDsByTimes query: %w", err)
+	}
+	defer rows.Close()
+
+	showtimeIDs := make(map[string]int64)
+	for rows.Next() {
+		var id int64
+		var showtime string
+		if err := rows.Scan(&id, &showtime); err != nil {
+			return nil, fmt.Errorf("findShowtimeIDsByTimes scan: %w", err)
+		}
+		showtimeIDs[showtime] = id
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("findShowtimeIDsByTimes rows: %w", err)
+	}
+
+	return showtimeIDs, nil
+}
+
+func (r *MovieScheduleRepository) UpsertMovieCinemas(ctx context.Context, movieID int64, cinemaID int64, startDate string, endDate string, times []string, price int) error {
+	if len(times) == 0 {
+		return fmt.Errorf("at least one showtime is required")
+	}
+
+	distinctTimes := make([]string, 0, len(times))
+	timeSet := make(map[string]struct{})
+	for _, t := range times {
+		if t == "" {
+			continue
+		}
+		if _, exists := timeSet[t]; !exists {
+			timeSet[t] = struct{}{}
+			distinctTimes = append(distinctTimes, t)
+		}
+	}
+
+	if len(distinctTimes) == 0 {
+		return fmt.Errorf("at least one showtime is required")
+	}
+
+	showtimeIDs, err := r.findShowtimeIDsByTimes(ctx, distinctTimes)
+	if err != nil {
+		return err
+	}
+
+	if len(showtimeIDs) != len(distinctTimes) {
+		missing := make([]string, 0)
+		for _, t := range distinctTimes {
+			if _, ok := showtimeIDs[t]; !ok {
+				missing = append(missing, t)
+			}
+		}
+		return fmt.Errorf("invalid showtimes: %v", missing)
+	}
+
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	insertSQL := `
+        INSERT INTO movie_cinemas (movie_id, cinema_id, show_date, showtime_id, price)
+        SELECT $1, $2, generated_date::date, st.id, $5
+        FROM generate_series($3::date, $4::date, interval '1 day') AS generated_date
+        JOIN showtimes st ON to_char(st.showtime, 'HH24:MI') = ANY($6::text[])
+        ON CONFLICT (movie_id, cinema_id, show_date, showtime_id) DO UPDATE
+            SET price = EXCLUDED.price;
+    `
+
+	_, err = tx.Exec(ctx, insertSQL, movieID, cinemaID, startDate, endDate, price, distinctTimes)
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	return nil
 }

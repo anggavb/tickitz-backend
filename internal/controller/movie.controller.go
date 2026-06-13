@@ -183,6 +183,64 @@ func (c *MovieController) ListCasts(ctx *gin.Context) {
 	})
 }
 
+func (c *MovieController) GetCinemas(ctx *gin.Context) {
+	cinemas, err := c.movieService.GetAllCinemas(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to fetch cinemas",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    cinemas,
+	})
+}
+
+func (c *MovieController) GetMovieShowtimes(ctx *gin.Context) {
+	movieID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil || movieID <= 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Invalid movie ID"})
+		return
+	}
+
+	schedules, err := c.movieService.GetMovieShowtimes(ctx.Request.Context(), movieID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Failed to fetch showtimes"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "data": schedules})
+}
+
+func (c *MovieController) AddMovieShowtimes(ctx *gin.Context) {
+	movieID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil || movieID <= 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Invalid movie ID"})
+		return
+	}
+
+	var req dto.AdminMovieShowtimesRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Invalid request payload"})
+		return
+	}
+
+	if req.Price < 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Price must be non-negative"})
+		return
+	}
+
+	if err := c.movieService.AddMovieShowtimes(ctx.Request.Context(), movieID, req); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{"success": true, "message": "Showtimes saved successfully"})
+}
+
 func (c *MovieController) Update(ctx *gin.Context) {
 	movieID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil || movieID <= 0 {

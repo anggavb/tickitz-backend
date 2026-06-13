@@ -12,7 +12,8 @@ import (
 )
 
 type MovieService struct {
-	movieRepo *repository.MovieRepository
+	movieRepo         *repository.MovieRepository
+	movieScheduleRepo *repository.MovieScheduleRepository
 }
 
 type MoviePagination struct {
@@ -22,9 +23,10 @@ type MoviePagination struct {
 	TotalPage int64 `json:"total_page"`
 }
 
-func NewMovieService(movieRepo *repository.MovieRepository) *MovieService {
+func NewMovieService(movieRepo *repository.MovieRepository, movieScheduleRepo *repository.MovieScheduleRepository) *MovieService {
 	return &MovieService{
-		movieRepo: movieRepo,
+		movieRepo:         movieRepo,
+		movieScheduleRepo: movieScheduleRepo,
 	}
 }
 
@@ -116,6 +118,18 @@ func (s *MovieService) Update(ctx context.Context, movieID int64, req dto.MovieR
 
 func (s *MovieService) Delete(ctx context.Context, movieID int64) error {
 	return s.movieRepo.Delete(ctx, movieID)
+}
+
+func (s *MovieService) GetAllCinemas(ctx context.Context) ([]dto.CinemaResponse, error) {
+	return s.movieScheduleRepo.FindAllCinemas(ctx)
+}
+
+func (s *MovieService) GetMovieShowtimes(ctx context.Context, movieID int64) ([]dto.MovieScheduleResponse, error) {
+	return s.movieScheduleRepo.FindShowtimesByMovieID(ctx, movieID)
+}
+
+func (s *MovieService) AddMovieShowtimes(ctx context.Context, movieID int64, req dto.AdminMovieShowtimesRequest) error {
+	return s.movieScheduleRepo.UpsertMovieCinemas(ctx, movieID, req.CinemaID, req.StartDate, req.EndDate, req.Times, req.Price)
 }
 
 func (s *MovieService) ListReleaseMonths(ctx context.Context) ([]string, error) {
