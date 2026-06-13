@@ -7,4 +7,5 @@ type UserProfile struct {
 	Photo       string `db:"photo"`
 	Point       int    `db:"point"`
 	LoyaltyTier string `db:"loyalty_tier"`
+	Email       string `db:"email"`
 }

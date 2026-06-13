@@ -2,6 +2,7 @@ package controller
 
 import (
 	"log"
+	"mime/multipart"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -65,15 +66,16 @@ func (c *ProfileController) GetProfileById(ctx *gin.Context) {
 // @Summary Update user profile
 // @Description Update profile of currently logged in user
 // @Tags Profile
-// @Accept json
-// @Produce json
-// @Param request body dto.UpdateProfileRequest true "Profile data"
+// @Accept multipart/form-data
+// @Param first_name formData string false "First Name"
+// @Param last_name formData string false "Last Name"
+// @Param phone formData string false "Phone Number"
+// @Param photo formData file false "Profile Photo"
 // @Success 200 {object} dto.SuccessResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /profile [put]
 func (c *ProfileController) UpdateUserProfile(ctx *gin.Context) {
-	// TODO: ambil dari JWT claims
 	claims, ok := jwttoken.GetClaims(ctx)
 	if !ok {
 		response.Error(ctx, http.StatusUnauthorized, "Unauthorized")
@@ -84,16 +86,24 @@ func (c *ProfileController) UpdateUserProfile(ctx *gin.Context) {
 
 	var req dto.UpdateProfileRequest
 
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Printf("[UpdateUserProfile] BindJSON error: %v\n", err)
+	if err := ctx.ShouldBind(&req); err != nil {
+		log.Printf("[UpdateUserProfile] Bind error: %v\n", err)
 
 		response.Error(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
+	var photo *multipart.FileHeader
+
+	file, err := ctx.FormFile("photo")
+	if err == nil {
+		photo = file
+	}
+
 	if err := c.ProfileService.ChangeUserProfile(
 		ctx.Request.Context(),
 		req,
+		photo,
 		userID,
 	); err != nil {
 		log.Printf("[UpdateUserProfile] Service error: %v\n", err)
