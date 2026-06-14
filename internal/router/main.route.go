@@ -14,6 +14,8 @@ import (
 func InitRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Client) {
 	router.Use(middleware.CORSMiddleware)
 	router.Static("/img", "./public/img")
+	router.Static("/payment", "./public/payment")
+	router.Static("/cinema", "./public/cinema")
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
