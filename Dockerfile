@@ -18,7 +18,8 @@ WORKDIR /app
 RUN apk add --no-cache tzdata \
   && addgroup -S app \
   && adduser -S -G app app \
-  && mkdir -p /app/public/img \
+  && mkdir -p /app/public/img/movies \
+  && mkdir -p /app/public/img/profile \
   && chown -R app:app /app
 
 COPY --from=builder /out/tickitz /app/tickitz
