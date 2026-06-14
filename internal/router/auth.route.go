@@ -20,7 +20,7 @@ func RegisterAuthRouter(router *gin.Engine, db *pgxpool.Pool, authCache *reposit
 	authRouter.POST("/otp", authController.GetNewOTP)
 	authRouter.POST("/signin", authController.Login)
 	authRouter.DELETE("/logout", middleware.VerifyToken(authCache), authController.Logout)
-	authRouter.PATCH("/password", authController.ChangeUserPassword)
+	authRouter.PATCH("/password", middleware.VerifyToken(authCache), authController.ChangeUserPassword)
 	authRouter.POST("/password/forgot", authController.ForgotPassword)
 	authRouter.POST("/password/reset", authController.ResetPasswordRequest)
 }
