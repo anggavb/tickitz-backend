@@ -79,7 +79,7 @@ func (s *ProfileService) ChangeUserProfile(
 			return err
 		}
 
-		photoURL := "/profile/" + filename
+		photoURL := "/img/profile/" + filename
 
 		req.Photo = &photoURL
 	}
