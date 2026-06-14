@@ -3,9 +3,7 @@ package controller
 import (
 	"bytes"
 	"errors"
-	"image"
-	"image/color"
-	"image/png"
+	"io"
 	"log"
 	"net/http"
 
@@ -15,7 +13,8 @@ import (
 	"github.com/tickitz-backend/internal/jwttoken"
 	"github.com/tickitz-backend/internal/repository"
 	"github.com/tickitz-backend/internal/service"
-	qrcode "github.com/yeqown/go-qrcode/v2"
+	"github.com/yeqown/go-qrcode/v2"
+	"github.com/yeqown/go-qrcode/writer/standard"
 )
 
 type orderController struct {
@@ -233,8 +232,12 @@ func (c *orderController) GetOrderQR(ctx *gin.Context) {
 		return
 	}
 
-	var buf bytes.Buffer
-	if err := qr.Save(newPNGQRWriter(&buf)); err != nil {
+	buf := bytes.NewBuffer(nil)
+	writer := nopWriteCloser{Writer: buf}
+
+	w := standard.NewWithWriter(writer, standard.WithLogoImageFileJPEG("./public/payment/logo-qr.jpg"), standard.WithQRWidth(10), standard.WithCircleShape())
+
+	if err := qr.Save(w); err != nil {
 		writeOrderError(ctx, err, "failed to generate ticket qr")
 		return
 	}
@@ -294,6 +297,7 @@ func (c *orderController) GetOrderByUserID(ctx *gin.Context) {
 }
 
 func writeOrderError(ctx *gin.Context, err error, fallbackMessage string) {
+	log.Println(err.Error())
 	switch {
 	case errors.Is(err, repository.ErrOrderNotFound), errors.Is(err, pgx.ErrNoRows):
 		ctx.JSON(http.StatusNotFound, dto.ErrorResponse{Success: false, Message: "order not found"})
@@ -308,57 +312,14 @@ func writeOrderError(ctx *gin.Context, err error, fallbackMessage string) {
 	case errors.Is(err, repository.ErrOrderAlreadyPaid):
 		ctx.JSON(http.StatusUnprocessableEntity, dto.ErrorResponse{Success: false, Message: "order already paid"})
 	default:
-		log.Println(err.Error())
 		ctx.JSON(http.StatusInternalServerError, dto.ErrorResponse{Success: false, Message: fallbackMessage})
 	}
 }
 
-type pngQRWriter struct {
-	buf    *bytes.Buffer
-	scale  int
-	margin int
+type nopWriteCloser struct {
+	io.Writer
 }
 
-func newPNGQRWriter(buf *bytes.Buffer) *pngQRWriter {
-	return &pngQRWriter{
-		buf:    buf,
-		scale:  10,
-		margin: 4,
-	}
-}
-
-func (w *pngQRWriter) Close() error {
+func (nopWriteCloser) Close() error {
 	return nil
-}
-
-func (w *pngQRWriter) Write(mat qrcode.Matrix) error {
-	bitmap := mat.Bitmap()
-	moduleCount := mat.Width()
-	imageSize := (moduleCount + w.margin*2) * w.scale
-	img := image.NewRGBA(image.Rect(0, 0, imageSize, imageSize))
-	white := color.RGBA{R: 255, G: 255, B: 255, A: 255}
-	black := color.RGBA{A: 255}
-
-	for y := 0; y < imageSize; y++ {
-		for x := 0; x < imageSize; x++ {
-			img.Set(x, y, white)
-		}
-	}
-
-	for y, row := range bitmap {
-		for x, set := range row {
-			if !set {
-				continue
-			}
-			startX := (x + w.margin) * w.scale
-			startY := (y + w.margin) * w.scale
-			for py := 0; py < w.scale; py++ {
-				for px := 0; px < w.scale; px++ {
-					img.Set(startX+px, startY+py, black)
-				}
-			}
-		}
-	}
-
-	return png.Encode(w.buf, img)
 }
