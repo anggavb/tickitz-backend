@@ -37,6 +37,8 @@ func (s *ProfileService) GetUserProfile(ctx context.Context, id int) (dto.UserPr
 		Phone:       profile.Phone,
 		Photo:       profile.Photo,
 		Point:       profile.Point,
+		NextTier:    profile.NextTier,
+		NextPoint:   profile.NextPoint,
 		LoyaltyTier: profile.LoyaltyTier,
 		Email:       profile.Email,
 	}, nil
