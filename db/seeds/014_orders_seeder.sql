@@ -1,0 +1,3 @@
+INSERT INTO "orders" ("id", "payment_reference", "user_id", "showtime_id", "total_price", "payment_method_id", "status", "expired_at", "created_at", "movie_cinema_id") VALUES
+('55a8f2b8-f152-4e28-b876-64f12c077b7d', 'TICKITZ-55A8F2B8F152', 4, 3, 160000, 6, 'paid', '2026-06-14 16:16:13.035587', '2026-06-13 15:16:13.035587', 16),
+('ef431f0e-dcfe-4721-9958-5623633d3096', NULL, 4, 2, 130000, NULL, 'waiting', '2026-06-14 16:29:45.363533', '2026-06-14 15:29:45.363533', 9);

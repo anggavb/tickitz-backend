@@ -51,7 +51,3 @@ DROP TABLE "movie_cinemas";
 ALTER TABLE "movie_cinemas_old" RENAME TO "movie_cinemas";
 ALTER SEQUENCE "movie_cinemas_old_id_seq" RENAME TO "movie_cinemas_id_seq";
 ALTER INDEX "movie_cinemas_old_pkey" RENAME TO "movie_cinemas_pkey";
-
-CREATE UNIQUE INDEX movie_cinemas_movie_id_cinema_id_idx
-ON "movie_cinemas" ("movie_id", "cinema_id");
-
