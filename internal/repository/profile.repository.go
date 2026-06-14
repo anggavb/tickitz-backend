@@ -23,9 +23,9 @@ func NewProfileRepository(db *pgxpool.Pool) *ProfileRepository {
 }
 
 func (r *ProfileRepository) GetProfile(ctx context.Context, id int) (model.UserProfile, error) {
-	sql := `SELECT COALESCE(u.firstname, '') AS first_name, COALESCE(u.lastname, '') AS last_name, COALESCE(u.phone_number, '') AS phone, COALESCE(u.photo, ''), COALESCE(l.name, '') AS loyalty_tier, u.point AS point FROM users u LEFT JOIN loyalty_tiers l ON l.id = u.loyalty_tier_id WHERE u.id = $1`
+	sql := `SELECT COALESCE(u.firstname, '') AS first_name, COALESCE(u.lastname, '') AS last_name, COALESCE(u.phone_number, '') AS phone, COALESCE(u.photo, ''), COALESCE(l.name, '') AS loyalty_tier, u.point, u.email AS point, (SELECT min_point FROM loyalty_tiers WHERE min_point > u.point ORDER BY min_point ASC LIMIT 1) AS next_point, (SELECT name FROM loyalty_tiers WHERE min_point > u.point ORDER BY min_point ASC LIMIT 1) AS next_tier FROM users u LEFT JOIN loyalty_tiers l ON l.id = u.loyalty_tier_id WHERE u.id = $1`
 	var profile model.UserProfile
-	if err := r.db.QueryRow(ctx, sql, id).Scan(&profile.FirstName, &profile.LastName, &profile.Phone, &profile.Photo, &profile.LoyaltyTier, &profile.Point); err != nil {
+	if err := r.db.QueryRow(ctx, sql, id).Scan(&profile.FirstName, &profile.LastName, &profile.Phone, &profile.Photo, &profile.LoyaltyTier, &profile.Point, &profile.Email, &profile.NextPoint, &profile.NextTier); err != nil {
 		log.Printf("[GetProfile] GetProfile error: %v\n", err)
 		return model.UserProfile{}, err
 	}

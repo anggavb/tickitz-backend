@@ -181,7 +181,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (dto.Lo
 	user, err := s.authRepo.GetUserPassword(ctx, email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return dto.LoginResponse{}, errs.ErrEmailNotFound
+			return dto.LoginResponse{}, errs.ErrInvalidCredentials
 		}
 		return dto.LoginResponse{}, err
 	}
@@ -276,7 +276,7 @@ func (s *AuthService) ForgotPassword(ctx context.Context, email string) error {
 	}
 
 	resetURL := fmt.Sprintf(
-		"%s/reset-password?token=%s",
+		"%s/auth/reset-password?token=%s",
 		clientURL,
 		rawToken,
 	)

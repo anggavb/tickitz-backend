@@ -345,6 +345,14 @@ func (c *AuthController) Logout(ctx *gin.Context) {
 }
 
 func (c *AuthController) ChangeUserPassword(ctx *gin.Context) {
+	claims, ok := jwttoken.GetClaims(ctx)
+	if !ok {
+		response.Error(ctx, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	userID := claims.UserId
+
 	var req dto.ChangePasswordRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -358,9 +366,6 @@ func (c *AuthController) ChangeUserPassword(ctx *gin.Context) {
 		response.Error(ctx, http.StatusBadRequest, "invalid request")
 		return
 	}
-
-	// TODO: ambil dari JWT claims
-	userID := 1
 
 	if err := c.authService.ChangeUserPassword(
 		ctx.Request.Context(),

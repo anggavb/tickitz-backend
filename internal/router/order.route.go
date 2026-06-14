@@ -17,4 +17,9 @@ func RegisterOrderRouter(router *gin.Engine, db *pgxpool.Pool, authCache *reposi
 
 	orderRoute.POST("", orderController.CreatePendingOrder)
 	orderRoute.GET("/history", orderController.GetOrderByUserID)
+	orderRoute.GET("/:order_id", orderController.GetOrderDetail)
+	orderRoute.PATCH("/:order_id/seats", orderController.UpdateOrderSeats)
+	orderRoute.GET("/:order_id/payment-methods", orderController.GetPaymentMethods)
+	orderRoute.PATCH("/:order_id/payment", orderController.SubmitPayment)
+	orderRoute.GET("/:order_id/qr", orderController.GetOrderQR)
 }
