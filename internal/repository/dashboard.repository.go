@@ -142,7 +142,7 @@ ORDER BY period_date ASC
 func normalizeDashboardPeriod(period string) (string, error) {
 	period = strings.ToLower(strings.TrimSpace(period))
 	if period == "" {
-		return "week", nil
+		return "day", nil
 	}
 
 	switch period {
