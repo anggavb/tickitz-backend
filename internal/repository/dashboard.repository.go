@@ -45,7 +45,7 @@ SELECT
 FROM orders o
 JOIN movie_cinemas mc ON mc.id = o.movie_cinema_id
 JOIN movies m ON m.id = mc.movie_id
-WHERE o.status IN ('paid', 'waiting')
+WHERE o.status = 'paid'
 `
 
 	args := []interface{}{trunc}
@@ -94,7 +94,7 @@ JOIN movie_cinemas mc ON mc.id = o.movie_cinema_id
 JOIN movies m ON m.id = mc.movie_id
 JOIN cinemas c ON c.id = mc.cinema_id
 JOIN locations l ON l.id = c.location_id
-WHERE o.status IN ('paid', 'waiting')
+WHERE o.status = 'paid'
 `
 
 	args := []interface{}{trunc}
