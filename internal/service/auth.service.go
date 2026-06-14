@@ -276,7 +276,7 @@ func (s *AuthService) ForgotPassword(ctx context.Context, email string) error {
 	}
 
 	resetURL := fmt.Sprintf(
-		"%s/reset-password?token=%s",
+		"%s/auth/reset-password?token=%s",
 		clientURL,
 		rawToken,
 	)
