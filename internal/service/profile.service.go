@@ -61,7 +61,7 @@ func (s *ProfileService) ChangeUserProfile(
 			ext,
 		)
 
-		dst := filepath.Join("public/profile", filename)
+		dst := filepath.Join("public/img/profile", filename)
 
 		src, err := photo.Open()
 		if err != nil {
