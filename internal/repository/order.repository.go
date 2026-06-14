@@ -2,9 +2,24 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tickitz-backend/internal/dto"
+)
+
+var (
+	ErrOrderNotFound         = errors.New("order not found")
+	ErrOrderExpired          = errors.New("order expired")
+	ErrOrderNotPayable       = errors.New("order is not ready for payment")
+	ErrOrderAlreadyPaid      = errors.New("order already paid")
+	ErrInvalidSeats          = errors.New("invalid seats")
+	ErrSeatUnavailable       = errors.New("seat unavailable")
+	ErrPaymentMethodNotFound = errors.New("payment method not found")
 )
 
 type OrderRepository struct {
@@ -135,6 +150,299 @@ func (r *OrderRepository) CreatePendingOrder(
 	}
 
 	return order, nil
+}
+
+func (r *OrderRepository) GetOrderDetail(ctx context.Context, userID int64, orderID string) (dto.OrderDetailResponse, error) {
+	query := `
+SELECT
+	o.id::text,
+	o.status::text,
+	o.movie_cinema_id,
+	to_char(mc.show_date, 'YYYY-MM-DD') AS show_date,
+	to_char(st.showtime, 'HH24:MI') AS show_time,
+	l.name AS location,
+	c.id AS cinema_id,
+	c.name AS cinema_name,
+	COALESCE(c.logo, '') AS cinema_logo,
+	mc.price AS ticket_price,
+	COALESCE(seat_data.seats, '{}') AS seats,
+	COALESCE(array_length(seat_data.seats, 1), 0) AS seat_count,
+	o.total_price,
+	COALESCE(o.payment_reference, '') AS payment_reference,
+	o.expired_at,
+	m.id AS movie_id,
+	m.name AS movie_title,
+	COALESCE(m.image, '') AS movie_poster,
+	COALESCE(category_data.genres, '{}') AS genres,
+	COALESCE(pm.id, 0) AS payment_method_id,
+	COALESCE(pm.name, '') AS payment_method_name,
+	COALESCE(pm.logo, '') AS payment_method_logo
+FROM orders o
+JOIN movie_cinemas mc ON mc.id = o.movie_cinema_id
+JOIN movies m ON m.id = mc.movie_id
+JOIN cinemas c ON c.id = mc.cinema_id
+JOIN locations l ON l.id = c.location_id
+JOIN showtimes st ON st.id = o.showtime_id
+LEFT JOIN payment_methods pm ON pm.id = o.payment_method_id
+LEFT JOIN LATERAL (
+	SELECT array_agg(trim(s."row") || s."number"::text ORDER BY s."row", s."number") AS seats
+	FROM order_details od
+	JOIN seats s ON s.id = od.seat_id
+	WHERE od.order_id = o.id
+) seat_data ON true
+LEFT JOIN LATERAL (
+	SELECT array_agg(DISTINCT cat.name ORDER BY cat.name) AS genres
+	FROM movie_categories mcat
+	JOIN categories cat ON cat.id = mcat.category_id
+	WHERE mcat.movie_id = m.id
+) category_data ON true
+WHERE o.id = $1
+	AND o.user_id = $2
+`
+
+	var order dto.OrderDetailResponse
+	var paymentMethodID int64
+	var paymentMethodName string
+	var paymentMethodLogo string
+
+	err := r.db.QueryRow(ctx, query, orderID, userID).Scan(
+		&order.ID,
+		&order.Status,
+		&order.MovieCinemaID,
+		&order.ShowDate,
+		&order.ShowTime,
+		&order.Location,
+		&order.Cinema.ID,
+		&order.Cinema.Name,
+		&order.Cinema.Logo,
+		&order.TicketPrice,
+		&order.Seats,
+		&order.SeatCount,
+		&order.TotalPayment,
+		&order.PaymentReference,
+		&order.ExpiredAt,
+		&order.Movie.ID,
+		&order.Movie.Title,
+		&order.Movie.Poster,
+		&order.Movie.Genres,
+		&paymentMethodID,
+		&paymentMethodName,
+		&paymentMethodLogo,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return dto.OrderDetailResponse{}, ErrOrderNotFound
+		}
+		return dto.OrderDetailResponse{}, err
+	}
+
+	order.Movie.Background = order.Movie.Poster
+	order.CinemaName = order.Cinema.Name
+	order.PaymentStatus = order.Status
+	if order.Status == "paid" {
+		order.TicketStatus = "active"
+	} else {
+		order.TicketStatus = order.Status
+	}
+	if paymentMethodID > 0 {
+		order.PaymentMethod = &dto.OrderPaymentMethodResponse{
+			ID:    paymentMethodID,
+			Name:  paymentMethodName,
+			Label: paymentMethodName,
+			Logo:  paymentMethodLogo,
+		}
+	}
+
+	return order, nil
+}
+
+func (r *OrderRepository) UpdateOrderSeats(ctx context.Context, userID int64, orderID string, seatCodes []string) (dto.OrderDetailResponse, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return dto.OrderDetailResponse{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	var movieCinemaID int64
+	var showtimeID int64
+	var cinemaID int64
+	var ticketPrice int
+	var status string
+
+	orderQuery := `
+SELECT o.movie_cinema_id, o.showtime_id, mc.cinema_id, mc.price, o.status::text
+FROM orders o
+JOIN movie_cinemas mc ON mc.id = o.movie_cinema_id
+WHERE o.id = $1
+	AND o.user_id = $2
+FOR UPDATE
+`
+	err = tx.QueryRow(ctx, orderQuery, orderID, userID).Scan(
+		&movieCinemaID,
+		&showtimeID,
+		&cinemaID,
+		&ticketPrice,
+		&status,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return dto.OrderDetailResponse{}, ErrOrderNotFound
+		}
+		return dto.OrderDetailResponse{}, err
+	}
+
+	if status == "paid" {
+		return dto.OrderDetailResponse{}, ErrOrderAlreadyPaid
+	}
+	if status == "cancel" {
+		return dto.OrderDetailResponse{}, ErrOrderNotFound
+	}
+
+	rows, err := tx.Query(ctx, `
+SELECT id, trim("row") || "number"::text AS code
+FROM seats
+WHERE cinema_id = $1
+	AND trim("row") || "number"::text = ANY($2)
+`, cinemaID, seatCodes)
+	if err != nil {
+		return dto.OrderDetailResponse{}, err
+	}
+	defer rows.Close()
+
+	seatIDsByCode := make(map[string]int64, len(seatCodes))
+	for rows.Next() {
+		var seatID int64
+		var code string
+		if err := rows.Scan(&seatID, &code); err != nil {
+			return dto.OrderDetailResponse{}, err
+		}
+		seatIDsByCode[code] = seatID
+	}
+	if err := rows.Err(); err != nil {
+		return dto.OrderDetailResponse{}, err
+	}
+	if len(seatIDsByCode) != len(seatCodes) {
+		return dto.OrderDetailResponse{}, ErrInvalidSeats
+	}
+
+	if _, err = tx.Exec(ctx, `DELETE FROM order_details WHERE order_id = $1`, orderID); err != nil {
+		return dto.OrderDetailResponse{}, err
+	}
+
+	for _, seatCode := range seatCodes {
+		seatID := seatIDsByCode[seatCode]
+		_, err = tx.Exec(ctx, `
+INSERT INTO order_details (order_id, seat_id, showtime_id, movie_cinema_id, price)
+VALUES ($1, $2, $3, $4, $5)
+`, orderID, seatID, showtimeID, movieCinemaID, ticketPrice)
+		if err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+				return dto.OrderDetailResponse{}, ErrSeatUnavailable
+			}
+			return dto.OrderDetailResponse{}, err
+		}
+	}
+
+	totalPrice := ticketPrice * len(seatCodes)
+	_, err = tx.Exec(ctx, `
+UPDATE orders
+SET total_price = $1,
+	status = 'waiting'
+WHERE id = $2
+`, totalPrice, orderID)
+	if err != nil {
+		return dto.OrderDetailResponse{}, err
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return dto.OrderDetailResponse{}, err
+	}
+
+	return r.GetOrderDetail(ctx, userID, orderID)
+}
+
+func (r *OrderRepository) GetPaymentMethods(ctx context.Context) ([]dto.OrderPaymentMethodResponse, error) {
+	rows, err := r.db.Query(ctx, `
+SELECT id, name, logo
+FROM payment_methods
+ORDER BY id
+`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	methods := make([]dto.OrderPaymentMethodResponse, 0)
+	for rows.Next() {
+		var method dto.OrderPaymentMethodResponse
+		if err := rows.Scan(&method.ID, &method.Name, &method.Logo); err != nil {
+			return nil, err
+		}
+		method.Label = method.Name
+		methods = append(methods, method)
+	}
+
+	return methods, rows.Err()
+}
+
+func (r *OrderRepository) MarkOrderPaid(ctx context.Context, userID int64, orderID string, paymentMethodID int64) (dto.OrderDetailResponse, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return dto.OrderDetailResponse{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	var methodExists bool
+	if err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM payment_methods WHERE id = $1)`, paymentMethodID).Scan(&methodExists); err != nil {
+		return dto.OrderDetailResponse{}, err
+	}
+	if !methodExists {
+		return dto.OrderDetailResponse{}, ErrPaymentMethodNotFound
+	}
+
+	var status string
+	var seatCount int
+	err = tx.QueryRow(ctx, `
+SELECT status::text
+FROM orders
+WHERE id = $1
+	AND user_id = $2
+FOR UPDATE
+`, orderID, userID).Scan(&status)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return dto.OrderDetailResponse{}, ErrOrderNotFound
+		}
+		return dto.OrderDetailResponse{}, err
+	}
+	if err = tx.QueryRow(ctx, `SELECT COUNT(*)::int FROM order_details WHERE order_id = $1`, orderID).Scan(&seatCount); err != nil {
+		return dto.OrderDetailResponse{}, err
+	}
+	if status == "paid" {
+		return dto.OrderDetailResponse{}, ErrOrderAlreadyPaid
+	}
+	if status != "waiting" || seatCount == 0 {
+		return dto.OrderDetailResponse{}, ErrOrderNotPayable
+	}
+
+	paymentReference := fmt.Sprintf("TICKITZ-%s", strings.ToUpper(strings.ReplaceAll(orderID, "-", ""))[:12])
+	_, err = tx.Exec(ctx, `
+UPDATE orders
+SET payment_method_id = $1,
+	payment_reference = $2,
+	status = 'paid'
+WHERE id = $3
+`, paymentMethodID, paymentReference, orderID)
+	if err != nil {
+		return dto.OrderDetailResponse{}, err
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return dto.OrderDetailResponse{}, err
+	}
+
+	return r.GetOrderDetail(ctx, userID, orderID)
 }
 
 func (r *OrderRepository) GetOrderHistory(
