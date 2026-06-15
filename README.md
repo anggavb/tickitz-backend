@@ -12,7 +12,6 @@ Tickitz Backend adalah REST API untuk platform pemesanan tiket bioskop. Backend 
 - [![Go](https://img.shields.io/badge/Go-1.20-blue?logo=go&logoColor=white)](https://golang.org/)
 - [![Gin-Gonic](https://img.shields.io/badge/Gin_Gonic-v1.12.0-green?logo=gin&logoColor=white)](https://gin-gonic.com/en/)
 - [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17.4-blue?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-- ![Swagger](https://img.shields.io/badge/API-Swagger-orange)
 
 ## Description & Features
 - REST API untuk mengelola film, showtime, pemesanan tiket, dan autentikasi pengguna.
