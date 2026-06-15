@@ -28,7 +28,9 @@ func NewProfileController(profileService *service.ProfileService) *ProfileContro
 // @Tags Profile
 // @Accept json
 // @Produce json
-// @Success 200 {object} dto.UserProfile
+// @Security ApiKeyAuth
+// @Success 200 {object} dto.UserProfileSuccessResponse
+// @Failure 401 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Router /profile [get]
 func (c *ProfileController) GetProfileById(ctx *gin.Context) {
@@ -67,14 +69,17 @@ func (c *ProfileController) GetProfileById(ctx *gin.Context) {
 // @Description Update profile of currently logged in user
 // @Tags Profile
 // @Accept multipart/form-data
+// @Produce json
+// @Security ApiKeyAuth
 // @Param first_name formData string false "First Name"
 // @Param last_name formData string false "Last Name"
 // @Param phone formData string false "Phone Number"
 // @Param photo formData file false "Profile Photo"
-// @Success 200 {object} dto.SuccessResponse
+// @Success 200 {object} dto.EmptyDataResponse
 // @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /profile [put]
+// @Router /profile/update [patch]
 func (c *ProfileController) UpdateUserProfile(ctx *gin.Context) {
 	claims, ok := jwttoken.GetClaims(ctx)
 	if !ok {

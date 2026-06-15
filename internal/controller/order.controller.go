@@ -47,8 +47,10 @@ func getUserID(ctx *gin.Context) (int64, bool) {
 //	@Tags			Orders
 //	@Accept			json
 //	@Produce		json
+//	@Security		ApiKeyAuth
 //	@Param			payload	body		dto.CreatePendingOrderRequest	true	"Pending order payload"
-//	@Success		201		{object}	dto.SuccessResponse			"Order created successfully"
+//	@Success		201		{object}	dto.CreatePendingOrderSuccessResponse	"Order created successfully"
+//	@Success		200		{object}	dto.CreatePendingOrderSuccessResponse	"Pending order reused successfully"
 //	@Failure		400		{object}	dto.ErrorResponse			"Invalid request payload"
 //	@Failure		401		{object}	dto.ErrorResponse			"Unauthorized"
 //	@Failure		404		{object}	dto.ErrorResponse			"Movie cinema schedule not found"
@@ -105,6 +107,20 @@ func (c *orderController) CreatePendingOrder(ctx *gin.Context) {
 	})
 }
 
+// GetOrderDetail godoc
+//
+//	@Summary		Get order detail
+//	@Description	Get one order detail for the authenticated user.
+//	@Tags			Orders
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			order_id	path		string	true	"Order ID"
+//	@Success		200			{object}	dto.OrderDetailSuccessResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
+//	@Router			/orders/{order_id} [get]
 func (c *orderController) GetOrderDetail(ctx *gin.Context) {
 	userID, ok := getUserID(ctx)
 	if !ok {
@@ -124,6 +140,23 @@ func (c *orderController) GetOrderDetail(ctx *gin.Context) {
 	})
 }
 
+// UpdateOrderSeats godoc
+//
+//	@Summary		Update order seats
+//	@Description	Set selected seats for a pending order.
+//	@Tags			Orders
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			order_id	path		string						true	"Order ID"
+//	@Param			payload		body		dto.UpdateOrderSeatsRequest	true	"Selected seats payload"
+//	@Success		200			{object}	dto.OrderDetailSuccessResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		409			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
+//	@Router			/orders/{order_id}/seats [patch]
 func (c *orderController) UpdateOrderSeats(ctx *gin.Context) {
 	userID, ok := getUserID(ctx)
 	if !ok {
@@ -157,6 +190,20 @@ func (c *orderController) UpdateOrderSeats(ctx *gin.Context) {
 	})
 }
 
+// GetPaymentMethods godoc
+//
+//	@Summary		Get order payment methods
+//	@Description	Get available payment methods after validating that the order belongs to the authenticated user.
+//	@Tags			Orders
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			order_id	path		string	true	"Order ID"
+//	@Success		200			{object}	dto.PaymentMethodsSuccessResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
+//	@Router			/orders/{order_id}/payment-methods [get]
 func (c *orderController) GetPaymentMethods(ctx *gin.Context) {
 	userID, ok := getUserID(ctx)
 	if !ok {
@@ -181,6 +228,23 @@ func (c *orderController) GetPaymentMethods(ctx *gin.Context) {
 	})
 }
 
+// SubmitPayment godoc
+//
+//	@Summary		Submit order payment
+//	@Description	Complete payment for an order using a selected payment method.
+//	@Tags			Orders
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			order_id	path		string							true	"Order ID"
+//	@Param			payload		body		dto.UpdateOrderPaymentRequest	true	"Payment payload"
+//	@Success		200			{object}	dto.OrderDetailSuccessResponse
+//	@Failure		400			{object}	dto.ErrorResponse
+//	@Failure		401			{object}	dto.ErrorResponse
+//	@Failure		404			{object}	dto.ErrorResponse
+//	@Failure		422			{object}	dto.ErrorResponse
+//	@Failure		500			{object}	dto.ErrorResponse
+//	@Router			/orders/{order_id}/payment [patch]
 func (c *orderController) SubmitPayment(ctx *gin.Context) {
 	userID, ok := getUserID(ctx)
 	if !ok {
@@ -214,6 +278,20 @@ func (c *orderController) SubmitPayment(ctx *gin.Context) {
 	})
 }
 
+// GetOrderQR godoc
+//
+//	@Summary		Get order QR
+//	@Description	Get ticket QR image for a paid order.
+//	@Tags			Orders
+//	@Produce		png
+//	@Security		ApiKeyAuth
+//	@Param			order_id	path	string	true	"Order ID"
+//	@Success		200		{file}	file	"PNG QR image"
+//	@Failure		401		{object}	dto.ErrorResponse
+//	@Failure		404		{object}	dto.ErrorResponse
+//	@Failure		422		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
+//	@Router			/orders/{order_id}/qr [get]
 func (c *orderController) GetOrderQR(ctx *gin.Context) {
 	userID, ok := getUserID(ctx)
 	if !ok {
@@ -253,10 +331,12 @@ func (c *orderController) GetOrderQR(ctx *gin.Context) {
 //	@Tags			Orders
 //	@Accept			json
 //	@Produce		json
+//	@Security		ApiKeyAuth
 //	@Param			page	query		int	false	"Page Number"	default(1)
 //	@Param			limit	query		int	false	"Items Per Page"	default(10)
-//	@Success		200		{object}	dto.SuccessResponse	"Order history retrieved successfully"
+//	@Success		200		{object}	dto.OrderHistorySuccessResponse	"Order history retrieved successfully"
 //	@Failure		400		{object}	dto.ErrorResponse		"Invalid query parameters"
+//	@Failure		401		{object}	dto.ErrorResponse		"Unauthorized"
 //	@Failure		500		{object}	dto.ErrorResponse		"Failed to get order history"
 //	@Router			/orders/history [get]
 func (c *orderController) GetOrderByUserID(ctx *gin.Context) {

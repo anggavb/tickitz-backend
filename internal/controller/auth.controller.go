@@ -24,6 +24,20 @@ func NewAuthController(authService *service.AuthService) *AuthController {
 	}
 }
 
+// Register godoc
+//
+//	@Summary		Register user
+//	@Description	Register a new user account and send activation OTP to email.
+//	@Tags			Auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		dto.RegisterRequest	true	"Register payload"
+//	@Success		201		{object}	dto.AuthEmailSuccessResponse
+//	@Success		200		{object}	dto.AuthEmailSuccessResponse	"Email already registered but account is not active"
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		409		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
+//	@Router			/auth/signup [post]
 func (c *AuthController) Register(ctx *gin.Context) {
 	var user dto.RegisterRequest
 
@@ -127,6 +141,18 @@ func (c *AuthController) Register(ctx *gin.Context) {
 	)
 }
 
+// Activate godoc
+//
+//	@Summary		Activate user account
+//	@Description	Activate a registered account using email and OTP.
+//	@Tags			Auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		dto.ActivationRequest	true	"Activation payload"
+//	@Success		200		{object}	dto.AuthEmailSuccessResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
+//	@Router			/auth/activate [post]
 func (c *AuthController) Activate(ctx *gin.Context) {
 	var user dto.ActivationRequest
 
@@ -216,6 +242,19 @@ func (c *AuthController) Activate(ctx *gin.Context) {
 	)
 }
 
+// GetNewOTP godoc
+//
+//	@Summary		Request new OTP
+//	@Description	Send a new activation OTP to an inactive account email.
+//	@Tags			Auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		dto.NewOTPRequest	true	"New OTP payload"
+//	@Success		200		{object}	dto.AuthEmailSuccessResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		409		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
+//	@Router			/auth/otp [post]
 func (c *AuthController) GetNewOTP(ctx *gin.Context) {
 	var user dto.NewOTPRequest
 
@@ -271,6 +310,17 @@ func (c *AuthController) GetNewOTP(ctx *gin.Context) {
 	)
 }
 
+// Login godoc
+//
+//	@Summary		Sign in
+//	@Description	Authenticate user and return JWT token.
+//	@Tags			Auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		dto.LoginRequest	true	"Login payload"
+//	@Success		200		{object}	dto.LoginSuccessResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Router			/auth/signin [post]
 func (c *AuthController) Login(ctx *gin.Context) {
 	var user dto.LoginRequest
 
@@ -317,6 +367,18 @@ func (c *AuthController) Login(ctx *gin.Context) {
 	)
 }
 
+// Logout godoc
+//
+//	@Summary		Logout
+//	@Description	Invalidate the current bearer token.
+//	@Tags			Auth
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	dto.EmptyDataResponse
+//	@Failure		401	{object}	dto.ErrorResponse
+//	@Failure		500	{object}	dto.ErrorResponse
+//	@Router			/auth/logout [delete]
 func (c *AuthController) Logout(ctx *gin.Context) {
 	claims, ok := jwttoken.GetClaims(ctx)
 	if !ok {
@@ -344,6 +406,20 @@ func (c *AuthController) Logout(ctx *gin.Context) {
 	response.Success(ctx, http.StatusOK, "Logout success", nil)
 }
 
+// ChangeUserPassword godoc
+//
+//	@Summary		Change password
+//	@Description	Change password for the currently authenticated user.
+//	@Tags			Auth
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			payload	body		dto.ChangePasswordRequest	true	"Change password payload"
+//	@Success		200		{object}	dto.EmptyDataResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		401		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
+//	@Router			/auth/password [patch]
 func (c *AuthController) ChangeUserPassword(ctx *gin.Context) {
 	claims, ok := jwttoken.GetClaims(ctx)
 	if !ok {
@@ -385,6 +461,18 @@ func (c *AuthController) ChangeUserPassword(ctx *gin.Context) {
 	response.Success(ctx, http.StatusOK, "password updated", nil)
 }
 
+// ForgotPassword godoc
+//
+//	@Summary		Forgot password
+//	@Description	Send a password reset link to the requested email.
+//	@Tags			Auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		dto.ForgotPasswordRequest	true	"Forgot password payload"
+//	@Success		200		{object}	dto.EmptyDataResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
+//	@Router			/auth/password/forgot [post]
 func (c *AuthController) ForgotPassword(ctx *gin.Context) {
 	var user dto.ForgotPasswordRequest
 	if err := ctx.ShouldBindJSON(&user); err != nil {
@@ -409,6 +497,19 @@ func (c *AuthController) ForgotPassword(ctx *gin.Context) {
 
 	response.Success(ctx, http.StatusOK, "success to sent a link to email", nil)
 }
+
+// ResetPasswordRequest godoc
+//
+//	@Summary		Reset password
+//	@Description	Reset password using a reset token from the forgot password email.
+//	@Tags			Auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			token	query	string					true	"Reset password token"
+//	@Param			payload	body	dto.ResetPasswordBody	true	"Reset password payload"
+//	@Success		200		{object}	dto.EmptyDataResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Router			/auth/password/reset [post]
 func (c *AuthController) ResetPasswordRequest(ctx *gin.Context) {
 	var reqBody dto.ResetPasswordBody
 	var reqParam dto.ResetPasswordQuery
