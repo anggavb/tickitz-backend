@@ -61,7 +61,15 @@ go mod download
 
 ### 3. Create Environment File
 
-Create a `.env` file in the project root:
+Copy the provided example environment file and update the values:
+
+```bash
+cp example.env .env
+```
+
+Then edit `.env` with your own settings.
+
+Example values:
 
 ```env
 # SMTP
@@ -125,16 +133,16 @@ make seed
 go run cmd/main.go
 ```
 
-Or:
-
-```bash
-make run
-```
-
 Server will run at:
 
 ```text
 http://localhost:8081
+```
+
+If you want to see task help for migrations and seeders, run:
+
+```bash
+make help
 ```
 
 ## API Documentation
@@ -144,7 +152,9 @@ http://localhost:8081
 | Endpoint | Method | Description |
 |-----------|----------|-------------|
 | /movies | GET | List movies with filters (public) |
+| /movies/upcoming | GET | List upcoming movies |
 | /movies/:slug | GET | Get movie detail by slug |
+| /movies/:slug/schedule-options | GET | Get schedule options for a movie by slug |
 | /movies/:slug/schedules | GET | Get schedules for a movie by slug |
 | /movies/showtimes | GET | Get available showtimes |
 | /movies/locations | GET | Get available locations |
@@ -154,16 +164,20 @@ http://localhost:8081
 | Endpoint | Method | Description |
 |-----------|----------|-------------|
 | /auth/signup | POST | Register new user |
-| /auth/activate | POST | Activate user account |
-| /auth/otp | POST | Request new OTP |
+| /auth/activate | POST | Activate user account with OTP |
+| /auth/otp | POST | Request new OTP for activation |
 | /auth/signin | POST | Login and get JWT token |
-| /auth/password | PATCH | Change user password |
+| /auth/logout | DELETE | Logout authenticated user |
+| /auth/password | PATCH | Change user password (authenticated) |
+| /auth/password/forgot | POST | Request password reset link |
+| /auth/password/reset | POST | Reset user password with token |
 
 ### Profile
 
 | Endpoint | Method | Description |
 |-----------|----------|-------------|
 | /profile | GET | Get authenticated user profile |
+| /profile/update | PATCH | Update authenticated user profile |
 
 ### Admin / Movies
 
@@ -175,6 +189,9 @@ http://localhost:8081
 | /admin/movies | POST | Create movie |
 | /admin/movies/:id | PATCH | Update movie |
 | /admin/movies/:id | DELETE | Delete movie |
+| /admin/movies/:id/showtimes | GET | Get showtimes for movie by ID |
+| /admin/movies/:id/showtimes | POST | Add showtime schedule for movie |
+| /admin/cinemas | GET | List cinemas |
 | /admin/categories | GET | List categories |
 | /admin/casts | GET | List casts |
 
