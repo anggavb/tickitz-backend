@@ -355,6 +355,36 @@ WHERE id = $2
 		return dto.OrderDetailResponse{}, err
 	}
 
+	_, err = tx.Exec(ctx, `
+WITH order_points AS (
+	SELECT (total_price / 1000)::int AS earned_points
+	FROM orders
+	WHERE id = $1
+		AND user_id = $2
+),
+new_points AS (
+	SELECT u.point + op.earned_points AS point
+	FROM users u
+	CROSS JOIN order_points op
+	WHERE u.id = $2
+),
+new_tier AS (
+	SELECT lt.id
+	FROM loyalty_tiers lt
+	JOIN new_points np ON lt.min_point <= np.point
+	ORDER BY lt.min_point DESC
+	LIMIT 1
+)
+UPDATE users
+SET point = (SELECT point FROM new_points),
+	loyalty_tier_id = (SELECT id FROM new_tier),
+	updated_at = now()
+WHERE id = $2
+`, orderID, userID)
+	if err != nil {
+		return dto.OrderDetailResponse{}, err
+	}
+
 	if err = tx.Commit(ctx); err != nil {
 		return dto.OrderDetailResponse{}, err
 	}
