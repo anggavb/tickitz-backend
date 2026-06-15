@@ -49,7 +49,7 @@ The backend is designed with:
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/your-organization/tickitz-backend.git
+git clone https://github.com/anggavb/tickitz-backend.git
 cd tickitz-backend
 ```
 
