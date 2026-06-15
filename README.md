@@ -1,21 +1,23 @@
+## Logo
+<p align="center">
+  <img src="https://raw.githubusercontent.com/anggavb/tickitz-frontend/refs/heads/main/src/assets/logo.png" width="200" alt="Tickitz Logo" />
+</p>
+
 # Tickitz Backend
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/license/mit)
 <br>
-Project backend untuk aplikasi Tickitz — API server dibangun dengan Go dan Gin.
+Tickitz Backend adalah REST API untuk platform pemesanan tiket bioskop. Backend ini menangani autentikasi pengguna, manajemen film, jadwal tayang, kursi, pemesanan tiket, profile user, admin movie management, dan dokumentasi API melalui Swagger.
 
 ## Tech Stacks
 - [![Go](https://img.shields.io/badge/Go-1.20-blue?logo=go&logoColor=white)](https://golang.org/)
 - [![Gin-Gonic](https://img.shields.io/badge/Gin_Gonic-v1.12.0-green?logo=gin&logoColor=white)](https://gin-gonic.com/en/)
 - [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17.4-blue?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+- ![Swagger](https://img.shields.io/badge/API-Swagger-orange)
 
 ## Description & Features
 - REST API untuk mengelola film, showtime, pemesanan tiket, dan autentikasi pengguna.
 - Fitur utama: register/login, manajemen film (CRUD), pemesanan, pembayaran, dan endpoint admin.
 
-## Logo
-<p align="center">
-  <img src="./public/img/logo.png" width="200" alt="Tickitz Logo" />
-</p>
 
 ## How to Setup
 1. Pastikan Go (v1.20+) dan PostgreSQL terpasang.
@@ -30,6 +32,8 @@ DB_USER={YOUR_DB_USER}
 
 ## Quickstart
 ```bash
+# Clone Project
+git clone https://github.com/anggavb/tickitz-backend.git
 # masuk ke folder backend
 cd tickitz-backend
 
@@ -96,9 +100,6 @@ make run
 
 ### Documentation
 Untuk dokumentasi lengkap buka `/swagger/index.html` pada server (jika Swagger diaktifkan).
-
-## Preview
-- Server berjalan pada `http://{APP_HOST}:{APP_PORT}` sesuai variabel di `.env` (default `localhost:8081` di `example.env`).
 
 ## How to Contribute
 - Fork repository, buat branch untuk fitur/bugfix, lalu buat pull request.
