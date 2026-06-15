@@ -1,7 +1,7 @@
 # Tickitz Backend
 
 <p align="center">
-  <img src="./public/img/logo.png" alt="Tickitz Logo" width="250"/>
+  <img src="https://raw.githubusercontent.com/anggavb/tickitz-frontend/refs/heads/main/src/assets/logo.png" width="200" alt="Tickitz Logo" />
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/license/mit)
