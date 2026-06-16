@@ -28,7 +28,8 @@ func NewDashboardController(dashboardService *service.DashboardService) *Dashboa
 // @Param movie_name query string false "Movie name filter"
 // @Param period query string false "Period (daily, weekly, monthly)"
 // @Success 200 {object} dto.DashboardSalesResponse
-// @Failure 500 {object} map[string]interface{}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /admin/dashboard/sales-chart [get]
 func (c *DashboardController) SalesChart(ctx *gin.Context) {
 	var query dto.DashboardSalesChartRequest
@@ -77,7 +78,8 @@ func (c *DashboardController) SalesChart(ctx *gin.Context) {
 // @Param location query string false "Cinema location filter"
 // @Param period query string false "Period (daily, weekly, monthly)"
 // @Success 200 {object} dto.DashboardTicketSalesResponse
-// @Failure 500 {object} map[string]interface{}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /admin/dashboard/ticket-sales [get]
 func (c *DashboardController) TicketSales(ctx *gin.Context) {
 	var query dto.DashboardTicketSalesRequest

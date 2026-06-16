@@ -29,7 +29,7 @@ func NewMovieHomeController(movieHomeService *service.MovieHomeService) *MovieHo
 //	@Accept			json
 //	@Produce		json
 //	@Param			slug	path		string	true	"Movie Slug"
-//	@Success		200		{object}	dto.SuccessResponse	"Movie detail retrieved successfully"
+//	@Success		200		{object}	dto.MovieDetailSuccessResponse	"Movie detail retrieved successfully"
 //	@Failure		400		{object}	dto.ErrorResponse		"Movie slug is required"
 //	@Failure		404		{object}	dto.ErrorResponse		"Movie not found"
 //	@Failure		500		{object}	dto.ErrorResponse		"Failed to get movie detail"
@@ -80,7 +80,7 @@ func (c *MovieHomeController) GetMovieBySlug(ctx *gin.Context) {
 //	@Param			date	query		string	false	"Show Date YYYY-MM-DD"
 //	@Param			time	query		string	false	"Showtime HH:MM"
 //	@Param			location	query		string	false	"Location Name"
-//	@Success		200		{object}	dto.SuccessResponse	"Movie schedules retrieved successfully"
+//	@Success		200		{object}	dto.MovieScheduleListSuccessResponse	"Movie schedules retrieved successfully"
 //	@Failure		400		{object}	dto.ErrorResponse		"Movie slug is required"
 //	@Failure		404		{object}	dto.ErrorResponse		"Movie not found"
 //	@Failure		500		{object}	dto.ErrorResponse		"Failed to get movie schedules"
@@ -145,7 +145,7 @@ func (c *MovieHomeController) GetMovieSchedulesBySlug(ctx *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			slug	path		string	true	"Movie Slug"
-//	@Success		200		{object}	dto.SuccessResponse	"Movie schedule options retrieved successfully"
+//	@Success		200		{object}	dto.MovieScheduleOptionsSuccessResponse	"Movie schedule options retrieved successfully"
 //	@Failure		400		{object}	dto.ErrorResponse		"Movie slug is required"
 //	@Failure		404		{object}	dto.ErrorResponse		"Movie not found"
 //	@Failure		500		{object}	dto.ErrorResponse		"Failed to get movie schedule options"
@@ -191,8 +191,8 @@ func (c *MovieHomeController) GetMovieScheduleOptionsBySlug(ctx *gin.Context) {
 // @Tags         Movie Schedules
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  map[string]interface{}
-// @Failure      500  {object}  map[string]interface{}
+// @Success      200  {object}  dto.MovieLocationListSuccessResponse
+// @Failure      500  {object}  dto.ErrorResponse
 // @Router       /movies/locations [get]
 func (c *MovieHomeController) GetLocations(ctx *gin.Context) {
 	locations, err := c.movieHomeService.GetLocations(ctx.Request.Context())
@@ -215,8 +215,8 @@ func (c *MovieHomeController) GetLocations(ctx *gin.Context) {
 // @Tags         Movie Schedules
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  map[string]interface{}
-// @Failure      500  {object}  map[string]interface{}
+// @Success      200  {object}  dto.MovieShowtimeListSuccessResponse
+// @Failure      500  {object}  dto.ErrorResponse
 // @Router       /movies/showtimes [get]
 func (c *MovieHomeController) GetShowtimes(ctx *gin.Context) {
 	showtimes, err := c.movieHomeService.GetShowtimes(ctx.Request.Context())
@@ -245,7 +245,7 @@ func (c *MovieHomeController) GetShowtimes(ctx *gin.Context) {
 //	@Param	showToday	query		bool		false	"Show only movies playing today"
 //	@Param	page		query		int			false	"Page Number"
 //	@Param	limit		query		int			false	"Items Per Page"
-//	@Success		200			{object}	dto.SuccessResponse
+//	@Success		200			{object}	dto.MovieHomeListSuccessResponse
 //	@Failure		400			{object}	dto.ErrorResponse
 //	@Failure		500			{object}	dto.ErrorResponse
 //	@Router			/movies [get]
@@ -298,7 +298,7 @@ func (c *MovieHomeController) GetMoviesWithFilter(ctx *gin.Context) {
 //	@Tags			Movies
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	dto.SuccessResponse
+//	@Success		200	{object}	dto.UpcomingMoviesSuccessResponse
 //	@Failure		500	{object}	dto.ErrorResponse
 //	@Router			/movies/upcoming [get]
 func (c *MovieHomeController) GetUpcomingMovies(ctx *gin.Context) {

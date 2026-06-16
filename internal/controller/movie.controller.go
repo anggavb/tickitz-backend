@@ -28,13 +28,17 @@ func NewMovieController(movieService *service.MovieService) *MovieController {
 // ListMovies godoc
 // @Summary Get list of movies
 // @Description Get paginated list of movies
-// @Tags Movies
+// @Tags Admin Movies
 // @Accept json
 // @Produce json
 // @Param page query int false "Page number"
 // @Param limit query int false "Limit per page"
+// @Param month query string false "Release month filter (YYYY-MM)"
+// @Security ApiKeyAuth
 // @Success 200 {object} dto.MovieListResponse
-// @Failure 500 {object} map[string]interface{}
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
 // @Router /admin/movies [get]
 func (c *MovieController) List(ctx *gin.Context) {
 	page := 1
@@ -77,13 +81,16 @@ func (c *MovieController) List(ctx *gin.Context) {
 // GetMovieByID godoc
 // @Summary Get movie by ID
 // @Description Get movie by ID
-// @Tags Movies
+// @Tags Admin Movies
 // @Accept json
 // @Produce json
 // @Param id path int true "Movie ID"
+// @Security ApiKeyAuth
 // @Success 200 {object} dto.MovieSingleResponse
-// @Failure 400 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 401 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
 // @Router /admin/movies/{id} [get]
 func (c *MovieController) GetByID(ctx *gin.Context) {
 	movieID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
@@ -110,6 +117,27 @@ func (c *MovieController) GetByID(ctx *gin.Context) {
 	})
 }
 
+// CreateMovie godoc
+//
+//	@Summary		Create movie
+//	@Description	Create a movie. Multipart form supports optional image upload; JSON with the same non-file fields is also accepted.
+//	@Tags			Admin Movies
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			name				formData	string	true	"Movie name"
+//	@Param			release_date		formData	string	true	"Release date (YYYY-MM-DD)"
+//	@Param			duration_in_minute	formData	int		true	"Duration in minutes"
+//	@Param			director_name		formData	string	false	"Director name"
+//	@Param			synopsis			formData	string	false	"Synopsis"
+//	@Param			categories			formData	[]string	false	"Categories"
+//	@Param			cast				formData	[]string	false	"Casts"
+//	@Param			image				formData	file	false	"Movie poster image"
+//	@Success		201					{object}	dto.MovieSingleResponse
+//	@Failure		400					{object}	dto.ErrorResponse
+//	@Failure		401					{object}	dto.ErrorResponse
+//	@Failure		403					{object}	dto.ErrorResponse
+//	@Router			/admin/movies [post]
 func (c *MovieController) Create(ctx *gin.Context) {
 	request, err := c.bindMovieRequest(ctx)
 	if err != nil {
@@ -135,6 +163,19 @@ func (c *MovieController) Create(ctx *gin.Context) {
 	})
 }
 
+// ListReleaseMonths godoc
+//
+//	@Summary		List movie release months
+//	@Description	Get available release months from movies.
+//	@Tags			Admin Movies
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	dto.StringListSuccessResponse
+//	@Failure		401	{object}	dto.ErrorResponse
+//	@Failure		403	{object}	dto.ErrorResponse
+//	@Failure		500	{object}	dto.ErrorResponse
+//	@Router			/admin/movies/months [get]
 func (c *MovieController) ListReleaseMonths(ctx *gin.Context) {
 	months, err := c.movieService.ListReleaseMonths(ctx.Request.Context())
 	if err != nil {
@@ -151,6 +192,19 @@ func (c *MovieController) ListReleaseMonths(ctx *gin.Context) {
 	})
 }
 
+// ListCategories godoc
+//
+//	@Summary		List categories
+//	@Description	Get all movie categories for admin forms.
+//	@Tags			Admin Movies
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	dto.StringListSuccessResponse
+//	@Failure		401	{object}	dto.ErrorResponse
+//	@Failure		403	{object}	dto.ErrorResponse
+//	@Failure		500	{object}	dto.ErrorResponse
+//	@Router			/admin/categories [get]
 func (c *MovieController) ListCategories(ctx *gin.Context) {
 	categories, err := c.movieService.ListCategories(ctx.Request.Context())
 	if err != nil {
@@ -167,6 +221,19 @@ func (c *MovieController) ListCategories(ctx *gin.Context) {
 	})
 }
 
+// ListCasts godoc
+//
+//	@Summary		List casts
+//	@Description	Get all movie casts for admin forms.
+//	@Tags			Admin Movies
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	dto.StringListSuccessResponse
+//	@Failure		401	{object}	dto.ErrorResponse
+//	@Failure		403	{object}	dto.ErrorResponse
+//	@Failure		500	{object}	dto.ErrorResponse
+//	@Router			/admin/casts [get]
 func (c *MovieController) ListCasts(ctx *gin.Context) {
 	casts, err := c.movieService.ListCasts(ctx.Request.Context())
 	if err != nil {
@@ -183,6 +250,19 @@ func (c *MovieController) ListCasts(ctx *gin.Context) {
 	})
 }
 
+// GetCinemas godoc
+//
+//	@Summary		List cinemas
+//	@Description	Get all cinemas for admin showtime forms.
+//	@Tags			Admin Movies
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Success		200	{object}	dto.CinemaListSuccessResponse
+//	@Failure		401	{object}	dto.ErrorResponse
+//	@Failure		403	{object}	dto.ErrorResponse
+//	@Failure		500	{object}	dto.ErrorResponse
+//	@Router			/admin/cinemas [get]
 func (c *MovieController) GetCinemas(ctx *gin.Context) {
 	cinemas, err := c.movieService.GetAllCinemas(ctx.Request.Context())
 	if err != nil {
@@ -199,6 +279,21 @@ func (c *MovieController) GetCinemas(ctx *gin.Context) {
 	})
 }
 
+// GetMovieShowtimes godoc
+//
+//	@Summary		Get movie showtimes
+//	@Description	Get configured cinema schedules for a movie by movie ID.
+//	@Tags			Admin Movies
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			id	path		int	true	"Movie ID"
+//	@Success		200	{object}	dto.MovieScheduleListSuccessResponse
+//	@Failure		400	{object}	dto.ErrorResponse
+//	@Failure		401	{object}	dto.ErrorResponse
+//	@Failure		403	{object}	dto.ErrorResponse
+//	@Failure		500	{object}	dto.ErrorResponse
+//	@Router			/admin/movies/{id}/showtimes [get]
 func (c *MovieController) GetMovieShowtimes(ctx *gin.Context) {
 	movieID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil || movieID <= 0 {
@@ -215,6 +310,22 @@ func (c *MovieController) GetMovieShowtimes(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "data": schedules})
 }
 
+// AddMovieShowtimes godoc
+//
+//	@Summary		Add movie showtimes
+//	@Description	Create or update cinema schedules for a movie.
+//	@Tags			Admin Movies
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			id		path	int								true	"Movie ID"
+//	@Param			payload	body	dto.AdminMovieShowtimesRequest	true	"Movie showtimes payload"
+//	@Success		201		{object}	dto.EmptyDataResponse
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		401		{object}	dto.ErrorResponse
+//	@Failure		403		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
+//	@Router			/admin/movies/{id}/showtimes [post]
 func (c *MovieController) AddMovieShowtimes(ctx *gin.Context) {
 	movieID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil || movieID <= 0 {
@@ -241,6 +352,29 @@ func (c *MovieController) AddMovieShowtimes(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"success": true, "message": "Showtimes saved successfully"})
 }
 
+// UpdateMovie godoc
+//
+//	@Summary		Update movie
+//	@Description	Update a movie. Multipart form supports optional image upload; JSON with the same non-file fields is also accepted.
+//	@Tags			Admin Movies
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			id					path		int		true	"Movie ID"
+//	@Param			name				formData	string	true	"Movie name"
+//	@Param			release_date		formData	string	true	"Release date (YYYY-MM-DD)"
+//	@Param			duration_in_minute	formData	int		true	"Duration in minutes"
+//	@Param			director_name		formData	string	false	"Director name"
+//	@Param			synopsis			formData	string	false	"Synopsis"
+//	@Param			categories			formData	[]string	false	"Categories"
+//	@Param			cast				formData	[]string	false	"Casts"
+//	@Param			image				formData	file	false	"Movie poster image"
+//	@Success		200					{object}	dto.MovieSingleResponse
+//	@Failure		400					{object}	dto.ErrorResponse
+//	@Failure		401					{object}	dto.ErrorResponse
+//	@Failure		403					{object}	dto.ErrorResponse
+//	@Failure		404					{object}	dto.ErrorResponse
+//	@Router			/admin/movies/{id} [patch]
 func (c *MovieController) Update(ctx *gin.Context) {
 	movieID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil || movieID <= 0 {
@@ -388,6 +522,21 @@ func (c *MovieController) saveUploadedImage(ctx *gin.Context, file *multipart.Fi
 	return "/img/movies/" + fileName, nil
 }
 
+// DeleteMovie godoc
+//
+//	@Summary		Delete movie
+//	@Description	Delete a movie by ID.
+//	@Tags			Admin Movies
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			id	path		int	true	"Movie ID"
+//	@Success		200	{object}	dto.EmptyDataResponse
+//	@Failure		400	{object}	dto.ErrorResponse
+//	@Failure		401	{object}	dto.ErrorResponse
+//	@Failure		403	{object}	dto.ErrorResponse
+//	@Failure		500	{object}	dto.ErrorResponse
+//	@Router			/admin/movies/{id} [delete]
 func (c *MovieController) Delete(ctx *gin.Context) {
 	movieID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil || movieID <= 0 {
