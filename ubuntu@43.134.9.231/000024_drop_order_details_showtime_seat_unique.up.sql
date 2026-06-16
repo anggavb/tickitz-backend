@@ -1,1 +1,0 @@
-DROP INDEX IF EXISTS order_details_showtime_id_seat_id_idx;
