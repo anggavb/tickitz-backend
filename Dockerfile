@@ -9,7 +9,7 @@ COPY . .
 
 # -trimpath buat ngilangin path di binary
 # -ldflags="-s -w" buat ngilangin debug info biar ukuran binary lebih kecil
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o /out/tickitz ./cmd
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/tickitz ./cmd
 
 FROM alpine:3.24.0
 
