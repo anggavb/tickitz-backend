@@ -6,3 +6,5 @@ docs
 .env*
 .air.toml
 docker-compose.yml
+redis.conf
+public/*
