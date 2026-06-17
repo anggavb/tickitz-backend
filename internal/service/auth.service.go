@@ -70,10 +70,12 @@ func (s *AuthService) Register(ctx context.Context, req dto.RegisterRequest) err
 		return errs.ErrInternalServer
 	}
 
+	htmlBody := pkg.GenerateOTPEmail(otp)
+
 	if err := pkg.SendMail(
 		[]string{req.Email},
 		"[TICKITZ] Activation OTP",
-		"Ini adalah kode OTP anda : \n\n"+otp,
+		htmlBody,
 	); err != nil {
 		log.Printf("[Register] Send email error: %v\n", err)
 		return errs.ErrInternalServer
@@ -152,10 +154,12 @@ func (s *AuthService) GetNewOTP(ctx context.Context, req dto.NewOTPRequest) erro
 		return errs.ErrInternalServer
 	}
 
+	htmlBody := pkg.GenerateResendOTPEmail(otp)
+
 	if err := pkg.SendMail(
 		[]string{req.Email},
 		"[TICKITZ] New Activation OTP",
-		"Ini adalah kode OTP baru anda : \n\n"+otp,
+		htmlBody,
 	); err != nil {
 		log.Printf("[GetNewOTP] Send email error: %v\n", err)
 		return errs.ErrInternalServer
@@ -281,16 +285,17 @@ func (s *AuthService) ForgotPassword(ctx context.Context, email string) error {
 		rawToken,
 	)
 
+	htmlBody := pkg.GenerateForgotPasswordEmail(resetURL)
+
 	err = pkg.SendMail(
 		[]string{email},
-		"TICKITZ RESET PASSWORD",
-		resetURL,
+		"[TICKITZ] Reset Password",
+		htmlBody,
 	)
 
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 

@@ -16,23 +16,23 @@ func SendMail(receivers []string, subject, body string) error {
 	address := host + ":" + port
 
 	message := []byte(
-		"From: Tickitz <support@viketin.id>\r\n" +
+		"From: Tickitz <" + from + ">\r\n" +
 			"To: " + receivers[0] + "\r\n" +
 			"Subject: " + subject + "\r\n" +
 			"MIME-Version: 1.0\r\n" +
-			"Content-Type: text/plain; charset=\"UTF-8\"\r\n" +
+			"Content-Type: text/html; charset=\"UTF-8\"\r\n" +
 			"\r\n" +
-			body + "\r\n",
+			body,
 	)
 
 	auth := smtp.PlainAuth("", username, password, host)
 
-	tlsconfig := &tls.Config{
+	tlsConfig := &tls.Config{
 		InsecureSkipVerify: false,
 		ServerName:         host,
 	}
 
-	conn, err := tls.Dial("tcp", address, tlsconfig)
+	conn, err := tls.Dial("tcp", address, tlsConfig)
 	if err != nil {
 		return err
 	}
@@ -64,5 +64,6 @@ func SendMail(receivers []string, subject, body string) error {
 	defer w.Close()
 
 	_, err = w.Write(message)
+
 	return err
 }
